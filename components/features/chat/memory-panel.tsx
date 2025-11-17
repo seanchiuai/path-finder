@@ -56,7 +56,7 @@ export function MemoryPanel({ isOpen, onClose }: MemoryPanelProps) {
   };
 
   const handleOverlayKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+    if (e.key === "Enter" || e.key === "Escape") {
       e.preventDefault();
       onClose();
     }

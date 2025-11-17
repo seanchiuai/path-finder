@@ -43,8 +43,7 @@ export const saveMemory = mutation({
 
 export const getUserMemories = query({
   args: {
-    pageSize: v.optional(v.number()),
-    offset: v.optional(v.number()),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -52,19 +51,16 @@ export const getUserMemories = query({
       return [];
     }
 
-    // Validate and normalize pagination params
-    const pageSize = Math.min(Math.max(args.pageSize ?? 50, 1), 100);
-    const offset = Math.max(args.offset ?? 0, 0);
+    // Validate and normalize limit (default 50, max 100)
+    const limit = Math.min(Math.max(args.limit ?? 50, 1), 100);
 
-    const allMemories = await ctx.db
+    // Use server-side pagination with take()
+    const memories = await ctx.db
       .query("userMemory")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-      .collect();
+      .take(limit);
 
-    // Apply pagination
-    const paginatedMemories = allMemories.slice(offset, offset + pageSize);
-
-    return paginatedMemories;
+    return memories;
   },
 });
 

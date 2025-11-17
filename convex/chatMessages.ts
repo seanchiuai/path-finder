@@ -65,13 +65,16 @@ export const clearHistory = mutation({
     let totalDeleted = 0;
 
     while (hasMore) {
-      const messages = await ctx.db
+      let query = ctx.db
         .query("chatMessages")
-        .withIndex("by_user", (q) => q.eq("userId", identity.subject))
-        .filter((q) =>
-          cutoffTime > 0 ? q.lt(q.field("createdAt"), cutoffTime) : true
-        )
-        .take(BATCH_SIZE);
+        .withIndex("by_user", (q) => q.eq("userId", identity.subject));
+
+      // Only apply time filter if cutoffTime is specified
+      if (cutoffTime > 0) {
+        query = query.filter((q) => q.lt(q.field("createdAt"), cutoffTime));
+      }
+
+      const messages = await query.take(BATCH_SIZE);
 
       if (messages.length === 0) {
         hasMore = false;

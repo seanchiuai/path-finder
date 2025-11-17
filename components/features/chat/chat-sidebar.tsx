@@ -87,7 +87,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
   const displayMessages = messages ? [...messages].reverse() : [];
 
   const handleOverlayKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " " || e.key === "Escape") {
+    if (e.key === "Enter" || e.key === "Escape") {
       e.preventDefault();
       onClose();
     }

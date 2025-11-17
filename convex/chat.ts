@@ -3,10 +3,31 @@ import { v } from "convex/values";
 import OpenAI from "openai";
 import { api } from "./_generated/api";
 
-// Configurable OpenAI parameters
-const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
-const CHAT_TEMPERATURE = parseFloat(process.env.CHAT_TEMPERATURE || "0.7");
-const CHAT_MAX_TOKENS = parseInt(process.env.CHAT_MAX_TOKENS || "400", 10);
+// Configurable OpenAI parameters with validation
+const DEFAULT_MODEL = "gpt-4o-mini";
+const DEFAULT_TEMPERATURE = 0.7;
+const DEFAULT_MAX_TOKENS = 400;
+
+// Validate and parse OPENAI_MODEL
+let OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || DEFAULT_MODEL;
+if (!OPENAI_MODEL) {
+  console.warn("OPENAI_MODEL is empty, using default:", DEFAULT_MODEL);
+  OPENAI_MODEL = DEFAULT_MODEL;
+}
+
+// Validate and parse CHAT_TEMPERATURE
+let CHAT_TEMPERATURE = parseFloat(process.env.CHAT_TEMPERATURE || String(DEFAULT_TEMPERATURE));
+if (!Number.isFinite(CHAT_TEMPERATURE) || CHAT_TEMPERATURE < 0.0 || CHAT_TEMPERATURE > 2.0) {
+  console.warn(`Invalid CHAT_TEMPERATURE (${process.env.CHAT_TEMPERATURE}), using default:`, DEFAULT_TEMPERATURE);
+  CHAT_TEMPERATURE = DEFAULT_TEMPERATURE;
+}
+
+// Validate and parse CHAT_MAX_TOKENS
+let CHAT_MAX_TOKENS = parseInt(process.env.CHAT_MAX_TOKENS || String(DEFAULT_MAX_TOKENS), 10);
+if (!Number.isInteger(CHAT_MAX_TOKENS) || CHAT_MAX_TOKENS < 1 || CHAT_MAX_TOKENS > 32768) {
+  console.warn(`Invalid CHAT_MAX_TOKENS (${process.env.CHAT_MAX_TOKENS}), using default:`, DEFAULT_MAX_TOKENS);
+  CHAT_MAX_TOKENS = DEFAULT_MAX_TOKENS;
+}
 
 // Type guard for OpenAI errors
 function isOpenAIError(e: unknown): e is { status?: number; message?: string } {
@@ -17,11 +38,11 @@ function isOpenAIError(e: unknown): e is { status?: number; message?: string } {
   );
 }
 
-// Sanitize memory value to prevent formatting issues
+// Sanitize memory value to prevent formatting issues while preserving Unicode
 function sanitizeMemoryValue(value: string): string {
   return value
     .replace(/[\n\r\t]+/g, " ") // Replace newlines/tabs with space
-    .replace(/[^\x20-\x7E\s]/g, "") // Remove control characters
+    .replace(/[\p{C}]/gu, "") // Remove Unicode control characters only
     .trim()
     .slice(0, 500); // Truncate to max 500 chars
 }
