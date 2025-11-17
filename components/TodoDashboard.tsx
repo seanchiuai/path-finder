@@ -72,32 +72,42 @@ export default function TodoDashboard() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-mona-heading mb-2">My Tasks</h1>
+      {/* Header */}
+      <div className="mb-8 animate-fade-in">
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-4xl font-bold tracking-tight">My Tasks</h1>
+          <div className="px-3 py-1 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
+            <span className="text-sm font-medium bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              {todos?.length || 0} total
+            </span>
+          </div>
+        </div>
+        <p className="text-muted-foreground">Stay organized, stay productive</p>
       </div>
 
-      <div className="mb-6 bg-card rounded-lg p-4 border border-border">
+      {/* New Task Form */}
+      <div className="mb-8 glass rounded-2xl p-5 border shadow-lg shadow-primary/5 animate-scale-in stagger-1">
         <form onSubmit={handleCreateTodo} className="space-y-3">
           <input
             type="text"
             value={newTodoTitle}
             onChange={(e) => setNewTodoTitle(e.target.value)}
-            placeholder="Add a task..."
-            className="w-full px-3 py-2 bg-transparent border-none outline-none text-base placeholder:text-muted-foreground"
+            placeholder="What needs to be done?"
+            className="w-full px-0 py-2 bg-transparent border-none outline-none text-base placeholder:text-muted-foreground/60 font-medium focus:placeholder:text-muted-foreground/40 transition-colors"
           />
           {newTodoTitle && (
-            <>
+            <div className="space-y-3 animate-fade-in">
               <textarea
                 value={newTodoDescription}
                 onChange={(e) => setNewTodoDescription(e.target.value)}
-                placeholder="Description (optional)"
-                className="w-full px-3 py-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground resize-none"
+                placeholder="Add details..."
+                className="w-full px-0 py-2 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/60 resize-none focus:placeholder:text-muted-foreground/40 transition-colors"
                 rows={2}
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  className="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:opacity-80 transition-opacity"
+                  className="px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white text-sm font-medium rounded-xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                 >
                   Add Task
                 </button>
@@ -107,129 +117,133 @@ export default function TodoDashboard() {
                     setNewTodoTitle("");
                     setNewTodoDescription("");
                   }}
-                  className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Cancel
                 </button>
               </div>
-            </>
+            </div>
           )}
         </form>
       </div>
 
-      <div className="flex gap-1 mb-6 border-b border-border">
+      {/* Tabs */}
+      <div className="flex gap-2 mb-8 p-1 bg-muted/30 rounded-xl w-fit animate-fade-in stagger-2">
         <button
           onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
             activeTab === "all"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-card text-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/50"
           }`}
         >
           All
-          {activeTab === "all" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-          )}
         </button>
         <button
           onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 ${
             activeTab === "pending"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-card text-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/50"
           }`}
         >
           Pending
           {pendingCount > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 text-xs bg-secondary rounded">
+            <span className="px-2 py-0.5 text-xs bg-gradient-to-r from-primary/20 to-secondary/20 text-primary rounded-full font-semibold">
               {pendingCount}
             </span>
-          )}
-          {activeTab === "pending" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
         <button
           onClick={() => setActiveTab("completed")}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 flex items-center gap-2 ${
             activeTab === "completed"
-              ? "text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-card text-foreground shadow-md"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/50"
           }`}
         >
           Completed
           {completedCount > 0 && (
-            <span className="ml-2 px-1.5 py-0.5 text-xs bg-secondary rounded">
+            <span className="px-2 py-0.5 text-xs bg-gradient-to-r from-accent/20 to-secondary/20 text-accent rounded-full font-semibold">
               {completedCount}
             </span>
-          )}
-          {activeTab === "completed" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
           )}
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         {!filteredTodos ? (
-          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          <div className="text-center py-16 animate-fade-in">
+            <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+              <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            </div>
+            <p className="text-muted-foreground">Loading your tasks...</p>
+          </div>
         ) : filteredTodos.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            {activeTab === "completed"
-              ? "No completed tasks"
-              : activeTab === "pending"
-              ? "No pending tasks"
-              : "No tasks yet. Add one above!"}
+          <div className="text-center py-16 animate-fade-in">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+              <span className="text-4xl">✨</span>
+            </div>
+            <p className="text-foreground font-medium mb-1">All clear!</p>
+            <p className="text-sm text-muted-foreground">
+              {activeTab === "completed"
+                ? "No completed tasks yet"
+                : activeTab === "pending"
+                ? "No pending tasks"
+                : "Ready to add your first task?"}
+            </p>
           </div>
         ) : (
-          filteredTodos.map((todo) => (
+          filteredTodos.map((todo, index) => (
             <div
               key={todo._id}
-              className="group bg-card rounded-lg p-4 border border-border hover:border-muted-foreground transition-colors"
+              className="group glass rounded-xl p-5 border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-200 animate-fade-in"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
               {editingId === todo._id ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <input
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-2 py-1 bg-transparent border-b border-border outline-none"
+                    className="w-full px-0 py-2 bg-transparent border-b border-border/50 outline-none font-medium focus:border-primary transition-colors"
                     autoFocus
                   />
                   <textarea
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="Description (optional)"
-                    className="w-full px-2 py-1 bg-transparent border-b border-border outline-none text-sm resize-none"
+                    placeholder="Add details..."
+                    className="w-full px-0 py-2 bg-transparent border-b border-border/50 outline-none text-sm resize-none focus:border-primary transition-colors"
                     rows={2}
                   />
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2">
                     <button
                       onClick={handleSaveEdit}
-                      className="px-3 py-1 bg-primary text-primary-foreground text-xs rounded hover:opacity-80"
+                      className="px-4 py-2 bg-gradient-to-r from-primary to-primary/90 text-white text-sm font-medium rounded-lg shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
                     >
                       Save
                     </button>
                     <button
                       onClick={handleCancelEdit}
-                      className="px-3 py-1 text-xs text-muted-foreground hover:text-foreground"
+                      className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <button
                     onClick={() => toggleComplete({ id: todo._id })}
-                    className={`mt-1 w-5 h-5 rounded border-2 flex-shrink-0 transition-colors ${
+                    className={`mt-0.5 w-6 h-6 rounded-lg border-2 flex-shrink-0 transition-all duration-200 ${
                       todo.status === "completed"
-                        ? "bg-primary border-primary"
-                        : "border-border hover:border-muted-foreground"
+                        ? "bg-gradient-to-br from-primary to-primary/90 border-primary shadow-lg shadow-primary/25"
+                        : "border-border hover:border-primary/50 hover:bg-primary/5"
                     }`}
                   >
                     {todo.status === "completed" && (
                       <svg
-                        className="w-full h-full text-primary-foreground p-0.5"
+                        className="w-full h-full text-white p-1"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -243,9 +257,9 @@ export default function TodoDashboard() {
                       </svg>
                     )}
                   </button>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3
-                      className={`text-base font-mona-medium ${
+                      className={`text-base font-medium leading-snug ${
                         todo.status === "completed"
                           ? "line-through text-muted-foreground"
                           : "text-foreground"
@@ -255,7 +269,7 @@ export default function TodoDashboard() {
                     </h3>
                     {todo.description && (
                       <p
-                        className={`text-sm mt-1 ${
+                        className={`text-sm mt-1.5 leading-relaxed ${
                           todo.status === "completed"
                             ? "line-through text-muted-foreground/60"
                             : "text-muted-foreground"
@@ -264,21 +278,32 @@ export default function TodoDashboard() {
                         {todo.description}
                       </p>
                     )}
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(todo.createdAt).toLocaleDateString()}
-                      </span>
-                      {todo.completedAt && (
-                        <span className="text-xs text-green-600">
-                          Completed {new Date(todo.completedAt).toLocaleDateString()}
+                    <div className="flex items-center gap-3 mt-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(todo.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric"
+                          })}
                         </span>
+                      </div>
+                      {todo.completedAt && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-secondary/20 to-accent/20 text-secondary font-medium">
+                            ✓ Completed {new Date(todo.completedAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric"
+                            })}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       onClick={() => handleStartEdit(todo)}
-                      className="p-1.5 text-muted-foreground hover:text-foreground"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 active:scale-95 transition-all"
                     >
                       <svg
                         className="w-4 h-4"
@@ -296,7 +321,7 @@ export default function TodoDashboard() {
                     </button>
                     <button
                       onClick={() => removeTodo({ id: todo._id })}
-                      className="p-1.5 text-muted-foreground hover:text-red-600"
+                      className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 active:scale-95 transition-all"
                     >
                       <svg
                         className="w-4 h-4"
