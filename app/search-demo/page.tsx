@@ -30,7 +30,7 @@ export default function SearchDemoPage() {
         <CardHeader>
           <CardTitle>How it works</CardTitle>
           <CardDescription>
-            Vector embeddings powered by OpenAI's text-embedding-3-small model
+            Vector embeddings powered by OpenAI&apos;s text-embedding-3-small model
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -38,21 +38,21 @@ export default function SearchDemoPage() {
             <h3 className="font-semibold mb-2">1. Embedding Generation</h3>
             <p className="text-sm text-muted-foreground">
               When you create a bookmark, we automatically generate a 1536-dimensional vector
-              embedding from the title, description, and URL using OpenAI's API.
+              embedding from the title, description, and URL using OpenAI&apos;s API.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">2. Semantic Search</h3>
             <p className="text-sm text-muted-foreground">
-              When you search, we generate an embedding for your query and use Convex's built-in
+              When you search, we generate an embedding for your query and use Convex&apos;s built-in
               vector search to find the most semantically similar bookmarks.
             </p>
           </div>
           <div>
             <h3 className="font-semibold mb-2">3. Relevance Ranking</h3>
             <p className="text-sm text-muted-foreground">
-              Results are automatically ranked by semantic similarity, so you'll find relevant
-              bookmarks even if they don't contain your exact search terms.
+              Results are automatically ranked by semantic similarity, so you&apos;ll find relevant
+              bookmarks even if they don&apos;t contain your exact search terms.
             </p>
           </div>
         </CardContent>
@@ -66,7 +66,7 @@ export default function SearchDemoPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SemanticSearch userId={user.id} limit={20} />
+          <SemanticSearch limit={20} />
         </CardContent>
       </Card>
 
@@ -78,7 +78,7 @@ export default function SearchDemoPage() {
           <ul className="space-y-2 text-sm">
             <li className="flex items-start gap-2">
               <span className="font-mono bg-muted px-2 py-1 rounded text-xs">
-                "React tutorials"
+                &ldquo;React tutorials&rdquo;
               </span>
               <span className="text-muted-foreground">
                 Finds React-related bookmarks
@@ -86,7 +86,7 @@ export default function SearchDemoPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-mono bg-muted px-2 py-1 rounded text-xs">
-                "machine learning"
+                &ldquo;machine learning&rdquo;
               </span>
               <span className="text-muted-foreground">
                 Finds ML and AI content
@@ -94,7 +94,7 @@ export default function SearchDemoPage() {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-mono bg-muted px-2 py-1 rounded text-xs">
-                "JavaScript frameworks"
+                &ldquo;JavaScript frameworks&rdquo;
               </span>
               <span className="text-muted-foreground">
                 Finds React, Vue, Angular, etc.

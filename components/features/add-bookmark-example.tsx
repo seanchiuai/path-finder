@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface AddBookmarkExampleProps {
@@ -36,6 +37,7 @@ export function AddBookmarkExample({ folderId }: AddBookmarkExampleProps) {
     e.preventDefault();
 
     if (!url.trim() || !title.trim()) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -52,8 +54,8 @@ export function AddBookmarkExample({ folderId }: AddBookmarkExampleProps) {
 
       // Step 2: Trigger embedding generation (non-blocking)
       // Don't await - let it run in background
-      generateBookmarkEmbedding({ bookmarkId }).catch((error) => {
-        console.error("Failed to generate embedding:", error);
+      generateBookmarkEmbedding({ bookmarkId }).catch(() => {
+        toast.error("Failed to generate embedding. Bookmark saved without embedding.");
         // Bookmark is still saved, just without embedding
         // User can retry later or use batch generation
       });
@@ -64,9 +66,9 @@ export function AddBookmarkExample({ folderId }: AddBookmarkExampleProps) {
       setDescription("");
 
       // Show success message
-      console.log("Bookmark created successfully!");
-    } catch (error) {
-      console.error("Failed to create bookmark:", error);
+      toast.success("Bookmark created successfully!");
+    } catch {
+      toast.error("Failed to create bookmark. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -2,6 +2,29 @@ import { action } from "./_generated/server";
 import { v } from "convex/values";
 import OpenAI from "openai";
 import { api } from "./_generated/api";
+import { encoding_for_model } from "tiktoken";
+
+const MAX_TOKENS = 8192; // Token limit for text-embedding-3-small
+
+/**
+ * Truncate text to fit within token limit
+ */
+function truncateToTokenLimit(text: string): string {
+  const encoder = encoding_for_model("text-embedding-3-small");
+  const tokens = encoder.encode(text);
+
+  if (tokens.length <= MAX_TOKENS) {
+    encoder.free();
+    return text;
+  }
+
+  // Truncate to max tokens
+  const truncatedTokens = tokens.slice(0, MAX_TOKENS);
+  const truncatedText = encoder.decode(truncatedTokens);
+  encoder.free();
+
+  return truncatedText;
+}
 
 /**
  * Generate embedding for text using OpenAI's text-embedding-3-small model
@@ -21,9 +44,10 @@ export const generateEmbedding = action({
     });
 
     try {
+      const truncatedText = truncateToTokenLimit(text);
       const response = await openai.embeddings.create({
         model: "text-embedding-3-small",
-        input: text.substring(0, 8000), // Truncate to ~8k chars
+        input: truncatedText,
       });
 
       return response.data[0].embedding;
@@ -53,7 +77,6 @@ async function retryWithBackoff<T>(
       throw error;
     }
   }
-  throw new Error("Max retries exceeded");
 }
 
 /**
@@ -82,7 +105,7 @@ export const generateBookmarkEmbedding = action({
 
     // Generate embedding with retry logic
     const embedding = await retryWithBackoff(() =>
-      generateEmbedding(ctx, { text: textToEmbed })
+      ctx.runAction(api.embeddings.generateEmbedding, { text: textToEmbed })
     );
 
     // Update bookmark with embedding
@@ -110,7 +133,7 @@ export const batchGenerateEmbeddings = action({
     let count = 0;
     for (const bookmark of bookmarks) {
       try {
-        await generateBookmarkEmbedding(ctx, { bookmarkId: bookmark._id });
+        await ctx.runAction(api.embeddings.generateBookmarkEmbedding, { bookmarkId: bookmark._id });
         count++;
       } catch (error) {
         console.error(`Failed to generate embedding for ${bookmark._id}:`, error);

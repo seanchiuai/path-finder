@@ -1,10 +1,10 @@
-import { query } from "./_generated/server";
+import { query, QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
  * Helper to get authenticated user ID
  */
-async function getUserId(ctx: any): Promise<string> {
+async function getUserId(ctx: QueryCtx): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Not authenticated");
@@ -18,18 +18,18 @@ async function getUserId(ctx: any): Promise<string> {
 export const searchBookmarks = query({
   args: {
     embedding: v.array(v.float64()),
-    userId: v.string(),
     projectId: v.optional(v.id("projects")),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
     const limit = args.limit ?? 10;
 
     // Search by embedding
     let results = await ctx.db
       .query("bookmarks")
       .withSearchIndex("by_embedding", (q) =>
-        q.search("embedding", args.embedding).eq("userId", args.userId)
+        q.search("embedding", args.embedding).eq("userId", userId)
       )
       .take(limit);
 

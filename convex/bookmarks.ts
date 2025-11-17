@@ -1,10 +1,11 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
+import { Doc } from "./_generated/dataModel";
 
 /**
  * Helper to get authenticated user ID
  */
-async function getUserId(ctx: any): Promise<string> {
+async function getUserId(ctx: QueryCtx | MutationCtx): Promise<string> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     throw new Error("Not authenticated");
@@ -149,7 +150,7 @@ export const updateBookmark = mutation({
       }
     }
 
-    const updates: any = { updatedAt: Date.now() };
+    const updates: Partial<Doc<"bookmarks">> = { updatedAt: Date.now() };
     if (args.title !== undefined) updates.title = args.title;
     if (args.description !== undefined) updates.description = args.description;
     if (args.folderId !== undefined) updates.folderId = args.folderId;

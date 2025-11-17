@@ -26,7 +26,7 @@ OPENAI_API_KEY=sk-your-actual-key-here
 
 #### For Production (Convex):
 
-1. Go to your Convex dashboard: https://dashboard.convex.dev
+1. Go to your [Convex dashboard](https://dashboard.convex.dev)
 2. Select your project
 3. Navigate to **Settings** → **Environment Variables**
 4. Add a new variable:
@@ -103,14 +103,14 @@ import { useState } from "react";
 import { useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
-function SearchComponent({ userId }) {
+function SearchComponent() {
   const [query, setQuery] = useState("");
   const [embedding, setEmbedding] = useState(null);
 
   const generateEmbedding = useAction(api.embeddings.generateEmbedding);
   const results = useQuery(
     embedding ? api.search.searchBookmarks : "skip",
-    embedding ? { embedding, userId, limit: 10 } : "skip"
+    embedding ? { embedding, limit: 10 } : "skip"
   );
 
   const handleSearch = async () => {
@@ -198,16 +198,16 @@ Batch generates embeddings for all bookmarks without embeddings.
 
 ### Queries
 
-#### `api.search.searchBookmarks({ embedding, userId, projectId?, limit? })`
+#### `api.search.searchBookmarks({ embedding, projectId?, limit? })`
 
-Search bookmarks by embedding vector.
+Search bookmarks by embedding vector. Automatically filters by authenticated user.
 
 - **Args**:
   - `embedding: number[]` (1536 dimensions)
-  - `userId: string`
   - `projectId?: Id<"projects">` (optional filter)
   - `limit?: number` (default: 10)
 - **Returns**: `Bookmark[]` (ranked by similarity)
+- **Auth**: Requires authenticated user (userId derived from context)
 
 #### `api.search.searchBookmarksInFolder({ embedding, folderId, limit? })`
 
@@ -256,7 +256,7 @@ The system includes exponential backoff retry logic:
 
 If `OPENAI_API_KEY` is not set, embedding generation will fail with:
 
-```
+```text
 Error: OPENAI_API_KEY environment variable is not set
 ```
 

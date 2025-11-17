@@ -10,12 +10,11 @@ import { Loader2, Search } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 
 interface SemanticSearchProps {
-  userId: string;
   projectId?: Id<"projects">;
   limit?: number;
 }
 
-export function SemanticSearch({ userId, projectId, limit = 10 }: SemanticSearchProps) {
+export function SemanticSearch({ projectId, limit = 10 }: SemanticSearchProps) {
   const [query, setQuery] = useState("");
   const [embedding, setEmbedding] = useState<number[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -28,7 +27,6 @@ export function SemanticSearch({ userId, projectId, limit = 10 }: SemanticSearch
     embedding
       ? {
           embedding,
-          userId,
           projectId,
           limit,
         }
@@ -97,7 +95,7 @@ export function SemanticSearch({ userId, projectId, limit = 10 }: SemanticSearch
             </div>
           ) : searchResults.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No results found for "{query}"
+              No results found for &ldquo;{query}&rdquo;
             </div>
           ) : (
             <div className="grid gap-4">
