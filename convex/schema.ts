@@ -34,7 +34,7 @@ export default defineSchema({
     userId: v.string(),
     memoryType: v.union(v.literal("preference"), v.literal("context")),
     key: v.string(), // e.g., "favorite_language", "work_interests"
-    value: v.string(), // e.g., "TypeScript", "React, Next.js, Convex"
+    value: v.string(), // e.g., "TypeScript", "React, Next.js", Convex"
     createdAt: v.number(),
     updatedAt: v.number(),
   })
@@ -51,7 +51,8 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_user", ["userId"])
-    .index("by_user_default", ["userId", "isDefault"]),
+    .index("by_user_default", ["userId", "isDefault"])
+    .index("by_user_name", ["userId", "name"]),
 
   // Folders table
   // Note: Cycle detection for parentFolderId is enforced in mutations
@@ -65,7 +66,8 @@ export default defineSchema({
   })
     .index("by_project", ["projectId"])
     .index("by_parent", ["parentFolderId"])
-    .index("by_user", ["userId"]),
+    .index("by_user", ["userId"])
+    .index("by_project_parent", ["projectId", "parentFolderId"]),
 
   // Bookmarks table with vector embeddings
   bookmarks: defineTable({
@@ -76,6 +78,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     previewImageId: v.optional(v.id("_storage")),
     faviconId: v.optional(v.id("_storage")),
+    favicon: v.optional(v.string()),
     embedding: v.optional(v.array(v.float64())), // 1536 dimensions for text-embedding-3-small
     tags: v.optional(v.array(v.string())),
     createdAt: v.number(),
@@ -83,6 +86,7 @@ export default defineSchema({
   })
     .index("by_folder", ["folderId"])
     .index("by_user", ["userId"])
+    .index("by_folder_url", ["folderId", "url"])
     .index("by_user_url", ["userId", "url"]) // For duplicate URL detection
     .searchIndex("by_embedding", {
       searchField: "embedding",
