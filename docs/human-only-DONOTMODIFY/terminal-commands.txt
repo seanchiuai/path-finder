@@ -1,1 +1,1 @@
-coderabbit full review: coderabbit review --plain -t committed
+coderabbit full review: coderabbit --plain --type all
