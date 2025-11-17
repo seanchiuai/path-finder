@@ -237,12 +237,14 @@ export default function TodoDashboard() {
                   />
                   <div className="flex gap-2 pt-2">
                     <button
+                      type="button"
                       onClick={handleSaveEdit}
                       className="px-5 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 active:scale-[0.98] transition-all duration-200"
                     >
                       Save
                     </button>
                     <button
+                      type="button"
                       onClick={handleCancelEdit}
                       className="px-5 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                     >
@@ -253,7 +255,9 @@ export default function TodoDashboard() {
               ) : (
                 <div className="flex items-start gap-4">
                   <button
+                    type="button"
                     onClick={() => toggleComplete({ id: todo._id })}
+                    aria-label={`Toggle completion for ${todo.title || 'todo'}`}
                     className={`mt-0.5 w-5 h-5 rounded-md border-2 flex-shrink-0 transition-all duration-200 ${
                       todo.status === "completed"
                         ? "bg-primary border-primary"
