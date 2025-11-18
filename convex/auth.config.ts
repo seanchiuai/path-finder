@@ -1,4 +1,13 @@
-const authConfig = {
+interface AuthProvider {
+  domain: string | undefined;
+  applicationID: string;
+}
+
+interface AuthConfig {
+  providers: AuthProvider[];
+}
+
+const authConfig: AuthConfig = {
   providers: [
     {
       // Replace with your own Clerk Issuer URL from your "convex" JWT template

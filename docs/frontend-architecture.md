@@ -3,7 +3,7 @@
 ## App Router Structure (Next.js 15)
 
 ### Directory Layout
-```
+```text
 /app
 ├── (auth)/          # Public routes (login, signup)
 ├── (protected)/     # Protected routes (require auth)

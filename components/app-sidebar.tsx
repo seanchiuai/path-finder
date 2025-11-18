@@ -32,12 +32,12 @@ const data = {
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/settings",
       icon: IconSettings,
     },
     {
       title: "Help",
-      url: "#",
+      url: "/help",
       icon: IconHelp,
     },
   ],
