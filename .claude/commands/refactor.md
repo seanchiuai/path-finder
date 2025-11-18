@@ -1,9 +1,8 @@
 ---
 description: Refactors the whole codebase safely
-allowed-tools: Bash, Edit
 ---
 
-# Command: /refactor
+# Command: Refactor
 
 
 You are a senior software engineer. Refactor the entire codebase for maintainability, consistency, and efficiency.

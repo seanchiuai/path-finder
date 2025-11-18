@@ -1,7 +1,6 @@
 ---
 description: Creates a worktree from an existing branch or creates a new one.
-allowed-tools: Bash, Edit
-argument-hint: [existing branch ID]
+argument-hint: [existing branch ID or names]
 ---
 
 # Command: /worktree

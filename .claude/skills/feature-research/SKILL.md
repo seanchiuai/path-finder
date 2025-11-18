@@ -6,7 +6,7 @@ description: "Use this whenever a user wants to add a new feature or explitly st
 # Feature Researcher
 
 ## Instructions
-When requested to research a feature, create a plan, or work on a big change such as a new feature:
+Invoked when the user requests to research a feature, create a plan, or work on a big change such as a new feature:
 
 
 1. **User Interview**  

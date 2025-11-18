@@ -1,6 +1,5 @@
 ---
 description: Creates implementation plans for your project based on features that are missing or things that need to be fixed
-allowed-tools: Bash, Edit
 argument-hint: [CHANGELOG.md, PRD.json, specific featues you want implemented/fixed/changed]
 ---
 

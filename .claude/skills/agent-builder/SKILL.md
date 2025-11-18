@@ -6,7 +6,7 @@ description: "Used to create a new agent. Used when a user wants to create a new
 # Create Skill
 
 ## Instructions
-When requested to create a new agent
+Invoked when the user requests to create a new agent or subagent
 
 
 # Create Skill

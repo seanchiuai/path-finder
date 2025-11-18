@@ -3,9 +3,7 @@
 ## Workflow
 Check `PRD.json` for product requirements → `.claude/skills/` → `.claude/agents/` → `.claude/plans/`.
 
-**Agents:** clerk (auth), convex (backend), deployment (EAS), nextjs (frontend)
-
-**CodeRabbit:** After writing code, run `coderabbit review --plain` from repo root for detailed analysis and suggestions. Apply feedback iteratively for quality improvements.
+**Agents:** clerk (auth), convex (backend), deployment (Vercel), nextjs (frontend)
 
 ## Stack & Patterns
 Next.js 15 • Tailwind 4 + shadcn/ui • Clerk → JWT → Convex • TypeScript strict • `@/*` imports
@@ -41,6 +39,8 @@ Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `midd
 **TypeScript types/interfaces:**
 - Read `docs/type-definitions.md` - Type patterns, interfaces, generics, Convex types
 
+**Always update docs/** when making significant changes. Update the above files in the `docs/` folder when patterns, APIs, or architecture changes significantly.
+
 ## Rules
 **TS:** Strict, no `any`, `@/*` imports | **React:** Functional, `"use client"`, Convex hooks, <200 LOC | **Style:** Tailwind, mobile-first | **Security:** OWASP Top 10, row-level filter, secrets in `.env.local` | **Quality:** >80% coverage, lint clean, build pass
 
@@ -53,3 +53,4 @@ Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `midd
 - Always sacrifice grammar for the sake of conciseness in your responses
 - Always constantly commit changes after finishing the smallest fix.
 - Always constantly update CHANGELOG.md after pulling in new commits or making new commits. Keep logs concise. Only log information critical information my engineers need to know.
+- When a plan finishes executing: update status in CHANGELOG.md and update the plan folder itself (`.claude/plans/`).

@@ -1,7 +1,5 @@
 ---
 description: Set up the project for first-time use by following setup.md and walking through any steps that require human intervention
-allowed-tools: Bash, Edit
-argument-hint: []
 ---
 
 # Command: /setup

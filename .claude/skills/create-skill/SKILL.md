@@ -6,7 +6,7 @@ description: "Used to create a new skill. Used when a user wants to create a new
 # Create Skill
 
 ## Instructions
-When requested to create a new skill
+Invoked when the user requests for a new skill to be created
 
 
 # Create Skill
