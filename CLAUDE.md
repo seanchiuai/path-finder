@@ -52,5 +52,5 @@ Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `midd
 - Never add backwards compatibility
 - Always sacrifice grammar for the sake of conciseness in your responses
 - Always constantly commit changes after finishing the smallest fix.
-- Always constantly update CHANGELOG.md after pulling in new commits or making new commits. Keep logs concise. Only log information critical information my engineers need to know.
-- When a plan finishes executing: update status in CHANGELOG.md and update the plan folder itself (`.claude/plans/`).
+- Always constantly update /docs/CHANGELOG.md after pulling in new commits or making new commits. Keep logs concise. Only log information critical information my engineers need to know.
+- When a plan finishes executing, update the plan folder itself (`.claude/plans/`) in addition to /docs/CHANGELOG.md
