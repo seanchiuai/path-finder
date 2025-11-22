@@ -2,6 +2,14 @@
 
 ## [Unreleased] - 2025-11-22
 
+### Fixed - Python Backend Dependencies
+
+**Requirements Update:**
+- `requirements.txt`: Updated elevenlabs from 1.14.1 (nonexistent) to 2.24.0 (latest)
+- Successfully installed all dependencies in venv
+
+## [Unreleased] - 2025-11-22
+
 ### Added - Direct Voice Chat Implementation
 
 **New Files:**
