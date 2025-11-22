@@ -102,6 +102,30 @@ class HealthResponse(BaseModel):
     spoon_ai_providers: List[str]
     version: str
 
+# Root endpoint
+@app.get("/")
+async def root():
+    """Root endpoint with API information"""
+    return {
+        "name": "Path Finder Python Backend",
+        "version": "1.0.0",
+        "status": "running",
+        "docs": "/docs",
+        "health": "/health",
+        "endpoints": {
+            "voice": {
+                "tts": "POST /api/voice/tts",
+                "tts_stream": "POST /api/voice/tts-stream",
+                "voices": "GET /api/voice/voices",
+                "stt": "POST /api/voice/stt"
+            },
+            "spoon_ai": {
+                "execute": "POST /api/spoon-ai/execute",
+                "toolkit": "POST /api/spoon-ai/toolkit"
+            }
+        }
+    }
+
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
