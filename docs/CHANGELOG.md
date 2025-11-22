@@ -1,5 +1,39 @@
 # Changelog
 
+## [Unreleased] - 2025-01-22
+
+### Project Transition - PathFinder (Career OS)
+
+**Project Overview:**
+- Transitioned from bookmark management template to PathFinder (Career OS)
+- AI-powered career discovery platform with voice onboarding and multi-agent analysis
+- PRD.json added with complete product requirements
+
+**New Agents:**
+- `agent-error-fixer`: Systematically fixes code review issues from docs/errors/
+- `agent-status-reporter`: Analyzes project areas and reports status
+- `agent-shadcn`: shadcn/ui + Tailwind CSS implementation
+
+**Removed Agents:**
+- `agent-microlink`, `agent-openai`, `agent-unfurl` (old bookmark-related agents)
+
+**New Commands:**
+- `/execute-plan [plan.md]`: Execute implementation plans with todo tracking
+- `/identify-cause`: Deep root cause analysis before fixing issues
+- `/double-check`: Review generated work from multiple perspectives
+- `/update-docs`: Update docs/ using parallel agents
+- `/init [PRD.json]`: Initialize new project from PRD
+
+**Documentation:**
+- Added `/docs/reports` for status reports (Eleven Labs voice agent status)
+- Added `/docs/human-only-DONOTMODIFY` for human-only instructions
+- Updated CLAUDE.md with project overview, agents, commands, recent updates
+
+**Key Changes:**
+- Enhanced error analysis emphasizing root cause identification
+- CRITICAL error labeling for system design/database structure issues
+- Plan execution workflow with status tracking
+
 ## [Unreleased] - 2025-11-17
 
 ### Added - Tech Stack Agents
