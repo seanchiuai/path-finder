@@ -2,6 +2,20 @@
 
 ## [Unreleased] - 2025-11-22
 
+### Added - Direct Voice Chat Implementation
+
+**New Files:**
+- `app/voice-demo-direct/page.tsx`: Direct voice demo route
+- `components/features/voice-chat-direct.tsx`: Direct voice chat component (188 lines)
+- `PROJECT_STATE.md`: Project state documentation
+- `nextSteps.md`: Next steps documentation (250 lines)
+
+**Updates:**
+- `python-backend/main.py`: +30 lines for enhanced voice functionality
+- `components/features/voice-chat.tsx`: Minor update
+
+## [Unreleased] - 2025-11-22
+
 ### Added - Python Backend Integration (Hybrid Architecture)
 
 **Python Microservice (FastAPI):**
