@@ -126,6 +126,12 @@ async def root():
         }
     }
 
+# Favicon endpoint (prevent 404s)
+@app.get("/favicon.ico")
+async def favicon():
+    """Return empty response for favicon requests"""
+    return JSONResponse(content={}, status_code=204)
+
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
