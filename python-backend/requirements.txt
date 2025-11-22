@@ -5,6 +5,10 @@ pydantic==2.10.5
 elevenlabs==1.14.1
 python-multipart==0.0.20
 
+# Spoon AI (xSpoon OS) - Requires Python 3.12+
+spoon-ai-sdk>=0.1.0
+spoon-toolkits>=0.1.0  # Optional: Extended tools
+
 # Optional: Add if you need these integrations
 # openai==1.59.7  # For Whisper STT
 # assemblyai==0.37.2  # Alternative STT service

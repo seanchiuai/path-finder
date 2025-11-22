@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import os
 from dotenv import load_dotenv
 import logging
@@ -16,9 +16,22 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize Spoon AI SDK
+try:
+    from spoon_ai.utils.config_manager import ConfigManager
+    spoon_config_manager = ConfigManager()
+    SPOON_AI_AVAILABLE = True
+    logger.info("✅ Spoon AI SDK configuration loaded successfully")
+except ImportError:
+    SPOON_AI_AVAILABLE = False
+    logger.warning("⚠️  Spoon AI SDK not installed. Install with: pip install spoon-ai-sdk")
+except Exception as e:
+    SPOON_AI_AVAILABLE = False
+    logger.error(f"❌ Spoon AI configuration error: {str(e)}")
+
 app = FastAPI(
     title="Path Finder Python Backend",
-    description="Python microservice for ElevenLabs and Spoon OS integrations",
+    description="Python microservice for ElevenLabs and Spoon AI integrations",
     version="1.0.0"
 )
 
@@ -63,28 +76,52 @@ class SpeechToTextResponse(BaseModel):
     text: str
     error: Optional[str] = None
 
-class SpoonOSProcessRequest(BaseModel):
-    operation: str = Field(..., description="Operation type for Spoon OS")
-    data: dict = Field(..., description="Data to process")
+class SpoonAIRequest(BaseModel):
+    prompt: str = Field(..., description="User prompt for Spoon AI agent")
+    agent_type: str = Field(default="general", description="Type of agent to use")
+    context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context for the agent")
+    provider: Optional[str] = Field(default=None, description="LLM provider (gemini, openai, anthropic, etc.)")
+    model: Optional[str] = Field(default=None, description="Specific model to use")
 
-class SpoonOSProcessResponse(BaseModel):
-    result: dict
+class SpoonAIResponse(BaseModel):
+    response: str
+    agent_type: str
+    provider_used: str
+    model_used: str
     error: Optional[str] = None
 
 class HealthResponse(BaseModel):
     status: str
     elevenlabs_configured: bool
-    spoonos_configured: bool
+    spoon_ai_available: bool
+    spoon_ai_providers: List[str]
     version: str
 
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint to verify service status"""
+    spoon_providers = []
+    if SPOON_AI_AVAILABLE:
+        try:
+            if os.getenv("GEMINI_API_KEY"):
+                spoon_providers.append("gemini")
+            if os.getenv("OPENAI_API_KEY"):
+                spoon_providers.append("openai")
+            if os.getenv("ANTHROPIC_API_KEY"):
+                spoon_providers.append("anthropic")
+            if os.getenv("DEEPSEEK_API_KEY"):
+                spoon_providers.append("deepseek")
+            if os.getenv("OPENROUTER_API_KEY"):
+                spoon_providers.append("openrouter")
+        except Exception:
+            pass
+
     return HealthResponse(
         status="healthy",
         elevenlabs_configured=ELEVENLABS_API_KEY is not None,
-        spoonos_configured=os.getenv("SPOONOS_API_KEY") is not None,
+        spoon_ai_available=SPOON_AI_AVAILABLE,
+        spoon_ai_providers=spoon_providers,
         version="1.0.0"
     )
 
@@ -235,37 +272,121 @@ async def speech_to_text(request: SpeechToTextRequest):
         logger.error(f"STT error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Speech-to-text failed: {str(e)}")
 
-# Spoon OS Integration
-@app.post("/api/spoonos/process", response_model=SpoonOSProcessResponse)
-async def process_with_spoonos(request: SpoonOSProcessRequest):
+# Spoon AI Integration
+@app.post("/api/spoon-ai/execute", response_model=SpoonAIResponse)
+async def execute_spoon_ai_agent(request: SpoonAIRequest):
     """
-    Process data using Spoon OS
+    Execute Spoon AI agent with user prompt
 
-    This is a placeholder for your Spoon OS integration.
-    Replace with actual Spoon OS SDK calls.
+    Spoon AI is a powerful agent framework that can:
+    - Execute complex workflows
+    - Use various LLM providers (Gemini, OpenAI, Claude, etc.)
+    - Access toolkits for specific tasks
+    - Maintain context across interactions
     """
+    if not SPOON_AI_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Spoon AI SDK not installed. Install with: pip install spoon-ai-sdk"
+        )
+
     try:
-        logger.info(f"Processing Spoon OS operation: {request.operation}")
+        logger.info(f"Executing Spoon AI agent: {request.agent_type}")
 
-        # TODO: Replace with actual Spoon OS integration
-        # Example:
-        # import spoonos
-        # client = spoonos.Client(api_key=os.getenv("SPOONOS_API_KEY"))
-        # result = client.process(request.operation, request.data)
+        # Import Spoon AI components
+        from spoon_ai.core.agent import Agent
+        from spoon_ai.core.llm import LLMProvider
 
-        # Placeholder response
-        result = {
-            "operation": request.operation,
+        # Determine provider and model
+        provider = request.provider or os.getenv("DEFAULT_LLM_PROVIDER", "gemini")
+        model = request.model or os.getenv("DEFAULT_MODEL", "gemini-2.5-pro")
+
+        # Initialize LLM provider
+        llm_provider = LLMProvider(provider=provider, model=model)
+
+        # Create agent
+        agent = Agent(
+            name=request.agent_type,
+            llm_provider=llm_provider,
+            system_prompt=f"You are a helpful AI assistant specialized in {request.agent_type} tasks."
+        )
+
+        # Build full prompt with context
+        full_prompt = request.prompt
+        if request.context:
+            context_str = "\n".join([f"{k}: {v}" for k, v in request.context.items()])
+            full_prompt = f"Context:\n{context_str}\n\nUser Request:\n{request.prompt}"
+
+        # Execute agent
+        response = agent.execute(full_prompt)
+
+        logger.info(f"Spoon AI response generated successfully")
+
+        return SpoonAIResponse(
+            response=response,
+            agent_type=request.agent_type,
+            provider_used=provider,
+            model_used=model
+        )
+
+    except ImportError as e:
+        logger.error(f"Spoon AI import error: {str(e)}")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Spoon AI components not available: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Spoon AI execution error: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Spoon AI execution failed: {str(e)}"
+        )
+
+# Spoon AI Toolkit Demo
+@app.post("/api/spoon-ai/toolkit")
+async def use_spoon_ai_toolkit(
+    toolkit_name: str = Form(...),
+    operation: str = Form(...),
+    params: str = Form(default="{}")
+):
+    """
+    Use Spoon AI toolkits for specialized operations
+
+    Available toolkits (if spoon-toolkits installed):
+    - web_scraping: Extract data from websites
+    - data_analysis: Analyze datasets
+    - file_operations: File manipulation
+    - api_integration: Call external APIs
+    """
+    if not SPOON_AI_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="Spoon AI SDK not installed"
+        )
+
+    try:
+        import json
+        params_dict = json.loads(params)
+
+        logger.info(f"Using Spoon AI toolkit: {toolkit_name}, operation: {operation}")
+
+        # TODO: Implement toolkit usage when spoon-toolkits patterns are documented
+        # Example pattern (adjust based on actual Spoon AI toolkit API):
+        # from spoon_toolkits.web_scraping import WebScrapingToolkit
+        # toolkit = WebScrapingToolkit()
+        # result = toolkit.execute(operation, params_dict)
+
+        return JSONResponse(content={
+            "toolkit": toolkit_name,
+            "operation": operation,
             "status": "success",
-            "message": "Spoon OS integration placeholder - replace with actual implementation",
-            "processed_data": request.data
-        }
-
-        return SpoonOSProcessResponse(result=result)
+            "message": "Toolkit integration ready - implement specific toolkit logic here",
+            "params": params_dict
+        })
 
     except Exception as e:
-        logger.error(f"Spoon OS error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Spoon OS processing failed: {str(e)}")
+        logger.error(f"Spoon AI toolkit error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Toolkit operation failed: {str(e)}")
 
 # Advanced ML endpoint example
 @app.post("/api/ml/analyze")
