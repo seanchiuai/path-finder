@@ -1,5 +1,28 @@
 # Styling Guide (Tailwind 4)
 
+## Configuration
+
+**Version:** Tailwind CSS v4 (latest)
+**PostCSS:** @tailwindcss/postcss v4
+**Config:** CSS-based via `@theme` directive in `app/globals.css` (no JS config file)
+
+## Design System - "Warm Minimalism"
+
+**Light Mode:**
+- Background: `#FBF8F3` (cream/beige)
+- Primary: `#C85A3E` (terracotta)
+- Accent: `#556B2F` (olive)
+
+**Dark Mode:**
+- Background: `#1A1816` (deep brown)
+- Primary: `#E67E5E` (coral)
+- Accent: `#7A916F` (sage)
+
+**Typography:**
+- Sans: Lexend (body text)
+- Heading: Spectral (headings)
+- Mono: SF Mono/Consolas
+
 ## Color System
 ```tsx
 // Background
@@ -146,5 +169,41 @@ active:scale-95
 - Avoid hardcoded colors
 
 ## Custom Utilities
-- Defined in `tailwind.config.ts`
+
+**Location:** `app/globals.css`
+
+```css
+.minimal-hover - Subtle hover states
+.card-minimal - Clean card styling with shadows
+.texture-minimal - Radial gradient background overlays
+```
+
+**Custom Animations:**
+- `fadeIn`, `slideIn`, `scaleIn`, `shimmer`
+- Stagger classes for sequential animations
+- `prefers-reduced-motion` support
+
+**Active States:**
+- `active:scale-[0.98]` on interactive elements
+
+## shadcn/ui Components Installed (23)
+
+**Installed:** avatar, badge, breadcrumb, button, card, chart, checkbox, dialog, drawer, dropdown-menu, input, label, select, separator, sheet, sidebar, skeleton, sonner, table, tabs, toggle-group, toggle, tooltip
+
+**Config:** `components.json`
+- Style: "new-york"
+- Base Color: neutral
+- Icon Library: lucide-react (with @tabler/icons-react as secondary)
+- CSS Variables: enabled
+
+**Customizations:**
+- Button: Gradient backgrounds, active scale animations
+- Cards: `rounded-xl` for modern aesthetic
+- Enhanced focus rings with opacity
+
+## Notes
+
+- No `tailwind.config.ts` file - using Tailwind 4's CSS-first approach
+- Custom variant: `@custom-variant dark (&:is(.dark *))`
+- CSS variables mapped via `@theme inline` block
 - Use `@apply` sparingly (prefer composition)
