@@ -18,7 +18,9 @@ import type * as memory from "../memory.js";
 import type * as myFunctions from "../myFunctions.js";
 import type * as projects from "../projects.js";
 import type * as search from "../search.js";
+import type * as spoonos from "../spoonos.js";
 import type * as todos from "../todos.js";
+import type * as voice from "../voice.js";
 
 import type {
   ApiFromModules,
@@ -37,7 +39,9 @@ declare const fullApi: ApiFromModules<{
   myFunctions: typeof myFunctions;
   projects: typeof projects;
   search: typeof search;
+  spoonos: typeof spoonos;
   todos: typeof todos;
+  voice: typeof voice;
 }>;
 
 /**

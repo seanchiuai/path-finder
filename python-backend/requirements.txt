@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-dotenv==1.0.1
+pydantic==2.10.5
+elevenlabs==1.14.1
+python-multipart==0.0.20
+
+# Optional: Add if you need these integrations
+# openai==1.59.7  # For Whisper STT
+# assemblyai==0.37.2  # Alternative STT service
+# transformers==4.47.1  # For ML models
+# torch==2.5.1  # PyTorch for ML
+# numpy==2.2.1  # Scientific computing
+# scipy==1.15.1  # Scientific computing
