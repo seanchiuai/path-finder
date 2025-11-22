@@ -18,15 +18,20 @@ logger = logging.getLogger(__name__)
 
 # Initialize Spoon AI SDK
 try:
-    from spoon_ai.utils.config_manager import ConfigManager
-    spoon_config_manager = ConfigManager()
+    from spoon_ai.llm import LLMManager, ConfigurationManager
+    spoon_config_manager = ConfigurationManager()
+    spoon_llm_manager = LLMManager(spoon_config_manager)
     SPOON_AI_AVAILABLE = True
     logger.info("✅ Spoon AI SDK configuration loaded successfully")
 except ImportError:
     SPOON_AI_AVAILABLE = False
+    spoon_config_manager = None
+    spoon_llm_manager = None
     logger.warning("⚠️  Spoon AI SDK not installed. Install with: pip install spoon-ai-sdk")
 except Exception as e:
     SPOON_AI_AVAILABLE = False
+    spoon_config_manager = None
+    spoon_llm_manager = None
     logger.error(f"❌ Spoon AI configuration error: {str(e)}")
 
 app = FastAPI(
@@ -293,37 +298,39 @@ async def execute_spoon_ai_agent(request: SpoonAIRequest):
     try:
         logger.info(f"Executing Spoon AI agent: {request.agent_type}")
 
-        # Import Spoon AI components
-        from spoon_ai.core.agent import Agent
-        from spoon_ai.core.llm import LLMProvider
-
         # Determine provider and model
-        provider = request.provider or os.getenv("DEFAULT_LLM_PROVIDER", "gemini")
-        model = request.model or os.getenv("DEFAULT_MODEL", "gemini-2.5-pro")
+        provider = request.provider or os.getenv("DEFAULT_LLM_PROVIDER", "openai")
+        model = request.model or os.getenv("DEFAULT_MODEL", "gpt-4")
 
-        # Initialize LLM provider
-        llm_provider = LLMProvider(provider=provider, model=model)
+        # Build messages with context
+        messages = []
 
-        # Create agent
-        agent = Agent(
-            name=request.agent_type,
-            llm_provider=llm_provider,
-            system_prompt=f"You are a helpful AI assistant specialized in {request.agent_type} tasks."
-        )
-
-        # Build full prompt with context
-        full_prompt = request.prompt
+        # Add system message
+        system_message = f"You are a helpful AI assistant specialized in {request.agent_type} tasks."
         if request.context:
             context_str = "\n".join([f"{k}: {v}" for k, v in request.context.items()])
-            full_prompt = f"Context:\n{context_str}\n\nUser Request:\n{request.prompt}"
+            system_message += f"\n\nContext:\n{context_str}"
 
-        # Execute agent
-        response = agent.execute(full_prompt)
+        messages.append({"role": "system", "content": system_message})
+        messages.append({"role": "user", "content": request.prompt})
+
+        # Execute using LLMManager
+        import asyncio
+        response_obj = await asyncio.create_task(
+            spoon_llm_manager.chat(
+                messages=messages,
+                provider=provider,
+                model=model
+            )
+        )
+
+        # Extract response content
+        response_text = response_obj.get("content", str(response_obj))
 
         logger.info(f"Spoon AI response generated successfully")
 
         return SpoonAIResponse(
-            response=response,
+            response=response_text,
             agent_type=request.agent_type,
             provider_used=provider,
             model_used=model
