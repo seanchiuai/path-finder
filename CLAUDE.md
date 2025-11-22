@@ -8,12 +8,21 @@ Check `PRD.json` for product requirements → `.claude/skills/` → `.claude/age
 ## Stack & Patterns
 Next.js 15 • Tailwind 4 + shadcn/ui • Clerk → JWT → Convex • TypeScript strict • `@/*` imports
 
+**Hybrid Backend:** Convex (database, realtime, auth) + Python FastAPI (ElevenLabs, Spoon OS, ML)
+
 Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `middleware.ts`
 
 **Clerk+Convex:** Create "convex" JWT in Clerk → set `CLERK_JWT_ISSUER_DOMAIN` → config `convex/auth.config.ts`
 
+**Python Backend:** `python-backend/main.py` (FastAPI) • Proxy via `convex/voice.ts`, `convex/spoonos.ts`
+
 ## Structure
 `/app/(auth|protected)` `/components` `/convex` `/docs` (all docs here, `CHANGELOG.md` for critical notes) `/.claude`
+
+## Python Backend Integration
+**Python microservice for ElevenLabs voice + Spoon OS:**
+- Read `docs/python-backend-integration.md` - Setup, deployment, custom integrations
+- Read `python-backend/README.md` - Quick start, API endpoints, testing
 
 ## Reference Docs (Read for Specific Tasks)
 
