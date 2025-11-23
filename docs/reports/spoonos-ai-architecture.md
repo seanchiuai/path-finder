@@ -13,6 +13,8 @@ Path-Finder uses a **hybrid AI architecture** with two parallel systems:
 1. **Career Compass** (Primary) - Uses Gemini 2.0-flash with custom multi-agent pipeline
 2. **SpoonOS Agents** (Legacy Fallback) - Uses SpoonOS ReActAgent framework with OpenAI/Anthropic
 
+**Voice System:** OpenAI Realtime API (not ElevenLabs - that was only in original PRD, never implemented)
+
 The system processes voice transcripts and resumes through specialized AI agents to generate personalized career recommendations with action plans.
 
 ---
@@ -22,7 +24,7 @@ The system processes voice transcripts and resumes through specialized AI agents
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │                    Frontend (Next.js 15)                       │
-│  - Voice onboarding interface (ElevenLabs)                     │
+│  - Voice onboarding interface (OpenAI Realtime API)            │
 │  - Career recommendations display                              │
 │  - Action plan tracking & gamification                         │
 └───────────────────┬────────────────────────────────────────────┘
@@ -35,12 +37,18 @@ The system processes voice transcripts and resumes through specialized AI agents
          │                     │  │  Port 8001           │
          │  - Real-time DB     │  └──────────────────────┘
          │  - Auth (Clerk)     │           │
-         │  - Vector search    │           │
-         │  - Proxy actions    │           ├─ Career Compass Pipeline
-         └─────────────────────┘           │  (Gemini 2.0-flash)
-                                           │
+         │  - Vector search    │           ├─ Career Compass Pipeline
+         │  - Proxy actions    │           │  (Gemini 2.0-flash)
+         └─────────────────────┘           │
                                            └─ SpoonOS Agents
                                               (OpenAI/Anthropic)
+
+         ┌─────────────────────┐
+         │  OpenAI Realtime    │
+         │  API (Voice)        │
+         │  - /voice-realtime  │
+         │  - @openai/agents   │
+         └─────────────────────┘
 ```
 
 **Key Files:**
@@ -48,6 +56,48 @@ The system processes voice transcripts and resumes through specialized AI agents
 - `convex/spoonos.ts:1-77` - Convex → Python proxy
 - `python-backend/agents_v2/pipeline.py:1-124` - Career Compass
 - `python-backend/spoon_career_agents.py:1-941` - SpoonOS legacy
+- `app/voice-realtime/App.tsx:1-471` - OpenAI Realtime voice interface
+- `hooks/realtime/useRealtimeSession.ts` - Realtime session management
+
+---
+
+## 1.1 Voice Integration (OpenAI Realtime API)
+
+**Implementation:** `/voice-realtime` route
+**Package:** `@openai/agents` v0.0.5 (Line 19 in package.json)
+
+**Architecture:**
+```
+User Voice Input
+     ↓
+Browser Microphone (WebRTC)
+     ↓
+OpenAI Realtime API (WebSocket)
+     ↓
+Lisa Career Advisor Agent
+     ↓
+Audio Response Stream → Browser Playback
+     ↓
+Transcript saved to sessionStorage
+     ↓
+POST to Python Backend for analysis
+```
+
+**Key Features:**
+- Real-time bidirectional audio streaming
+- Server-side Voice Activity Detection (VAD)
+- Turn-taking detection (500ms silence threshold)
+- Push-to-talk mode support
+- Multi-language support (stored in localStorage)
+- Audio recording for playback/download
+- Ephemeral key authentication via `/api/realtime/session`
+
+**Agent Configuration:**
+- `lib/agentConfigs/lisaCareerAdvisor/index.ts` - Lisa agent persona
+- Moderation guardrails for safety
+- Custom tools for career analysis
+
+**NOT USED:** ElevenLabs (was in original PRD, never implemented)
 
 ---
 
@@ -392,10 +442,16 @@ async def analyze_career(user_input):
 
 ### 5.1 Onboarding Flow
 
+**Voice System:** OpenAI Realtime API at `/voice-realtime` (not ElevenLabs)
+- Uses `@openai/agents` SDK (v0.0.5)
+- Real-time bidirectional audio streaming
+- Lisa Career Advisor agent configuration
+- WebRTC-based connection with ephemeral keys
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. USER INPUT                                                   │
-│    - Voice interview (ElevenLabs) → transcript                  │
+│    - Voice interview (OpenAI Realtime API) → transcript         │
 │    - Resume upload (optional) → resume_text                     │
 └────────────────────────┬────────────────────────────────────────┘
                          │
@@ -802,16 +858,13 @@ defineTable({
 ```bash
 # LLM Providers (required for Career Compass)
 GEMINI_API_KEY=your_gemini_key_here  # Primary
-OPENAI_API_KEY=your_openai_key       # SpoonOS fallback
+OPENAI_API_KEY=your_openai_key       # SpoonOS fallback + Realtime API
 ANTHROPIC_API_KEY=your_anthropic_key # SpoonOS fallback
 
 # System Configuration
 USE_CAREER_COMPASS=true  # Toggle: true (Gemini) or false (SpoonOS)
 DEFAULT_LLM_PROVIDER=gemini
 DEFAULT_MODEL=gemini-2.0-flash
-
-# Voice Integration
-ELEVENLABS_API_KEY=your_elevenlabs_key
 
 # CORS
 ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
@@ -820,12 +873,17 @@ ALLOWED_ORIGINS=http://localhost:3000,https://your-app.vercel.app
 PORT=8001
 ```
 
+**Note:** ELEVENLABS_API_KEY not needed - project uses OpenAI Realtime API for voice.
+
 ### 8.2 Convex Environment Variables
 **Set in:** Convex Dashboard → Settings → Environment Variables
 
 ```bash
 PYTHON_API_URL=http://localhost:8001  # Dev
 # PYTHON_API_URL=https://your-python-api.fly.dev  # Production
+
+# OpenAI Realtime API
+OPENAI_API_KEY=sk-...  # Required for /api/realtime/session endpoint
 ```
 
 ### 8.3 Frontend (.env.local)
@@ -840,6 +898,9 @@ CLERK_JWT_ISSUER_DOMAIN=your-clerk-domain.clerk.accounts.dev
 # Convex
 NEXT_PUBLIC_CONVEX_URL=https://your-convex-app.convex.cloud
 CONVEX_DEPLOYMENT=dev:your-deployment
+
+# OpenAI (for Realtime API)
+OPENAI_API_KEY=sk-...  # Used in /api/realtime/session route
 ```
 
 ---
