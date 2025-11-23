@@ -113,7 +113,7 @@ export default function RecommendationsPage() {
               <p className="text-muted-foreground mb-4">
                 No recommendations available yet. Complete your profile to get started!
               </p>
-              <Button onClick={() => window.location.href = "/onboarding"}>
+              <Button onClick={() => router.push('/voice-realtime')}>
                 Complete Onboarding
               </Button>
             </div>
