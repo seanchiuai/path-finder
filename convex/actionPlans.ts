@@ -68,19 +68,37 @@ export const createActionPlan = mutation({
     }
 
     const userId = identity.subject;
-    
+
     // Verify recommendation belongs to user
     const recommendation = await ctx.db.get(args.recommendationId);
     if (!recommendation || recommendation.userId !== userId) {
       throw new Error("Recommendation not found or unauthorized");
     }
 
+    // Transform legacy phase format to new Career Compass format
+    const transformedPhases = args.phases.map((phase, index) => ({
+      phaseId: index + 1,
+      name: phase.title,
+      order: index + 1,
+      status: index === 0 ? "unlocked" : "locked",
+      title: phase.title,
+      duration: phase.duration,
+      steps: phase.steps,
+    }));
+
+    // Get careerId from selected recommendation or first recommendation
+    const careerId = recommendation.selectedRecommendation?.role
+      || recommendation.recommendations[0]?.role
+      || "unknown";
+
     const actionPlanId = await ctx.db.insert("actionPlans", {
       userId,
+      careerId,
       recommendationId: args.recommendationId,
       timeframe: args.timeframe,
       generatedPlanMarkdown: args.generatedPlanMarkdown,
-      phases: args.phases,
+      phases: transformedPhases,
+      tasks: [], // Empty tasks array for legacy plans
       requiredSkills: args.requiredSkills,
       recommendedProjects: args.recommendedProjects,
       suggestedInternshipsRoles: args.suggestedInternshipsRoles,

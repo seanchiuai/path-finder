@@ -147,13 +147,14 @@ export const abandonRecommendations = mutation({
     await Promise.all(recommendations.map(rec => ctx.db.delete(rec._id)));
 
     // Clear AI analysis results from user profile
-    const userProfile = await ctx.db
-      .query("userProfiles")
+    // Clear career profile data (not userProfile)
+    const careerProfile = await ctx.db
+      .query("careerProfiles")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .first();
 
-    if (userProfile) {
-      await ctx.db.patch(userProfile._id, {
+    if (careerProfile) {
+      await ctx.db.patch(careerProfile._id, {
         aiAnalysisResults: undefined,
         rawOnboardingTranscript: undefined,
       });
