@@ -92,4 +92,18 @@ export default defineSchema({
       searchField: "embedding",
       filterFields: ["userId", "folderId"],
     }),
+
+  // Realtime Conversations (OpenAI Realtime API)
+  realtimeConversations: defineTable({
+    userId: v.string(),
+    conversationId: v.string(), // Unique ID for each session
+    agentName: v.string(), // e.g., "lisa"
+    fullTranscript: v.string(), // Entire conversation as formatted string
+    sessionDuration: v.optional(v.number()), // Duration in seconds
+    messagesCount: v.number(), // Number of messages exchanged
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_conversation_id", ["conversationId"]),
 });
