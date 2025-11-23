@@ -6,7 +6,7 @@ Coordinates all specialized agents using SpoonOS patterns.
 import asyncio
 import logging
 from typing import Dict, Any
-from app.utils.gemini_chatbot import GeminiChatBot
+from utils.gemini_chatbot import GeminiChatBot
 from .skill_agent import SkillAgent
 from .personality_agent import PersonalityAgent
 from .passion_agent import PassionAgent

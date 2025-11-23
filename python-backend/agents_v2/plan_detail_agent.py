@@ -6,8 +6,8 @@ Uses LLM to create personalized learning resources, projects, networking contact
 import logging
 import json
 from typing import Dict, Any
-from app.utils.gemini_chatbot import GeminiChatBot
-from app.utils.youtube_search import search_career_videos
+from utils.gemini_chatbot import GeminiChatBot
+from utils.youtube_search import search_career_videos
 
 logger = logging.getLogger(__name__)
 
