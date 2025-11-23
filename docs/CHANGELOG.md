@@ -13,6 +13,12 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Fixed - Transcription Model Consistency
+**Voice-realtime transcription model alignment:**
+- Fixed inconsistency between API route (`whisper-1`) and session hook (`gpt-4o-mini-transcribe`)
+- Both now use `whisper-1` for consistent language detection
+- Reduces English misdetection issues caused by model mismatch
+
 ### Added - Language Preference Specification
 **Voice-realtime language selection with ISO-639-1 codes:**
 - `components/realtime/LanguageSelector.tsx`: Dropdown with 21 supported languages (en, es, fr, de, it, pt, nl, pl, ru, zh, ja, ko, ar, hi, tr, vi, th, sv, da, no, fi)
