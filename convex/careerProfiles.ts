@@ -108,7 +108,7 @@ export const updateCareerProfile = mutation({
     }
 
     const userId = identity.subject;
-    
+
     // Get existing profile
     const profile = await ctx.db
       .query("careerProfiles")
@@ -131,7 +131,47 @@ export const updateCareerProfile = mutation({
     if (args.recommendations !== undefined) updates.recommendations = args.recommendations;
 
     await ctx.db.patch(profile._id, updates);
-    
+
+    return await ctx.db.get(profile._id);
+  },
+});
+
+/**
+ * Remove a specific recommendation from career profile
+ */
+export const removeRecommendationFromProfile = mutation({
+  args: {
+    career: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+
+    // Get existing profile
+    const profile = await ctx.db
+      .query("careerProfiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Career profile not found");
+    }
+
+    // Filter out the specific recommendation from the recommendations array
+    if (profile.recommendations) {
+      const updatedRecommendations = profile.recommendations.filter(
+        rec => rec.role !== args.career
+      );
+
+      await ctx.db.patch(profile._id, {
+        recommendations: updatedRecommendations,
+      });
+    }
+
     return await ctx.db.get(profile._id);
   },
 });

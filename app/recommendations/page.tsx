@@ -7,7 +7,7 @@ import { useUser } from "@clerk/nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash } from "@tabler/icons-react"
+import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash, IconX } from "@tabler/icons-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
@@ -42,8 +42,11 @@ export default function RecommendationsPage() {
   const updateCareerProfile = useMutation(api.careerProfiles.updateCareerProfile)
   const createCareerRecommendations = useMutation(api.careerRecommendations.createCareerRecommendations)
   const abandonRecommendations = useMutation(api.careerRecommendations.abandonRecommendations)
+  const removeRecommendation = useMutation(api.careerRecommendations.removeRecommendation)
+  const removeRecommendationFromProfile = useMutation(api.careerProfiles.removeRecommendationFromProfile)
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
+  const [removingCareer, setRemovingCareer] = useState<string | null>(null)
 
   // Handlers
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
@@ -110,6 +113,32 @@ export default function RecommendationsPage() {
       toast.error("Failed to clear recommendations")
     } finally {
       setIsAbandoning(false)
+    }
+  }
+
+  const handleRemoveCareer = async (career: { career?: string; role?: string; industry: string }, source: 'ai-analysis' | 'convex') => {
+    const careerName = career.career || career.role || ''
+    const careerKey = `${careerName}-${career.industry}`
+    setRemovingCareer(careerKey)
+
+    try {
+      if (source === 'convex' && recommendations?._id) {
+        await removeRecommendation({
+          recommendationId: recommendations._id,
+          industry: career.industry,
+          role: careerName,
+        })
+      } else if (source === 'ai-analysis') {
+        await removeRecommendationFromProfile({
+          career: careerName,
+        })
+      }
+      toast.success(`Removed ${careerName} from recommendations`)
+    } catch (error) {
+      console.error("Failed to remove career:", error)
+      toast.error("Failed to remove career")
+    } finally {
+      setRemovingCareer(null)
     }
   }
 
@@ -312,86 +341,110 @@ export default function RecommendationsPage() {
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Display recommendations from AI analysis */}
-        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, index: number) => (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{rec.career}</CardTitle>
-                  <CardDescription>{rec.salary_range}</CardDescription>
+        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, index: number) => {
+          const careerKey = `${rec.career}-${rec.salary_range}`
+          return (
+            <Card key={index} className="hover:shadow-lg transition-shadow relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => handleRemoveCareer(rec, 'ai-analysis')}
+                disabled={removingCareer === careerKey}
+              >
+                <IconX className="h-4 w-4" />
+              </Button>
+              <CardHeader>
+                <div className="flex justify-between items-start pr-8">
+                  <div>
+                    <CardTitle className="text-lg">{rec.career}</CardTitle>
+                    <CardDescription>{rec.salary_range}</CardDescription>
+                  </div>
+                  <Badge variant="secondary">{Math.round(rec.match_score * 100)}% Match</Badge>
                 </div>
-                <Badge variant="secondary">{Math.round(rec.match_score * 100)}% Match</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {rec.reasoning}
-              </p>
-              <div className="mb-4">
-                <p className="text-xs font-semibold mb-2">Required Skills:</p>
-                <div className="flex flex-wrap gap-1">
-                  {rec.required_skills.slice(0, 5).map((skill: string, i: number) => (
-                    <Badge key={i} variant="outline" className="text-xs">
-                      {skill}
-                    </Badge>
-                  ))}
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {rec.reasoning}
+                </p>
+                <div className="mb-4">
+                  <p className="text-xs font-semibold mb-2">Required Skills:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.required_skills.slice(0, 5).map((skill: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => handleSelectCareer(rec, recommendations?._id || 'ai-analysis')}
-                  disabled={selectingCareer === `${rec.career}-${rec.salary_range}`}
-                >
-                  {selectingCareer === `${rec.career}-${rec.salary_range}` ? "Choosing..." : "Choose This Career"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
-                  View Details
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleSelectCareer(rec, recommendations?._id || 'ai-analysis')}
+                    disabled={selectingCareer === careerKey}
+                  >
+                    {selectingCareer === careerKey ? "Choosing..." : "Choose This Career"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
+                    View Details
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
+                    Save
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
         
         {/* Display recommendations from Convex */}
-        {recommendations?.recommendations?.map((rec, index) => (
-          <Card key={`convex-${index}`} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{rec.role}</CardTitle>
-                  <CardDescription>{rec.industry}</CardDescription>
+        {recommendations?.recommendations?.map((rec, index) => {
+          const careerKey = `${rec.role}-${rec.industry}`
+          return (
+            <Card key={`convex-${index}`} className="hover:shadow-lg transition-shadow relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => handleRemoveCareer(rec, 'convex')}
+                disabled={removingCareer === careerKey}
+              >
+                <IconX className="h-4 w-4" />
+              </Button>
+              <CardHeader>
+                <div className="flex justify-between items-start pr-8">
+                  <div>
+                    <CardTitle className="text-lg">{rec.role}</CardTitle>
+                    <CardDescription>{rec.industry}</CardDescription>
+                  </div>
+                  <Badge variant="secondary">{rec.matchScore}% Match</Badge>
                 </div>
-                <Badge variant="secondary">{rec.matchScore}% Match</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                {rec.matchExplanation}
-              </p>
-              <div className="flex gap-2">
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={() => handleSelectCareer(rec, recommendations!._id)}
-                  disabled={selectingCareer === `${rec.role}-${rec.industry}`}
-                >
-                  {selectingCareer === `${rec.role}-${rec.industry}` ? "Choosing..." : "Choose This Career"}
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
-                  View Details
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
-                  Save
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {rec.matchExplanation}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleSelectCareer(rec, recommendations!._id)}
+                    disabled={selectingCareer === careerKey}
+                  >
+                    {selectingCareer === careerKey ? "Choosing..." : "Choose This Career"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
+                    View Details
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
+                    Save
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

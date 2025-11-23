@@ -162,3 +162,37 @@ export const abandonRecommendations = mutation({
     return { success: true };
   },
 });
+
+/**
+ * Remove a specific recommendation from the list
+ */
+export const removeRecommendation = mutation({
+  args: {
+    recommendationId: v.id("careerRecommendations"),
+    industry: v.string(),
+    role: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const recommendation = await ctx.db.get(args.recommendationId);
+    if (!recommendation || recommendation.userId !== identity.subject) {
+      throw new Error("Recommendation not found or unauthorized");
+    }
+
+    // Filter out the specific recommendation
+    const updatedRecommendations = recommendation.recommendations.filter(
+      rec => !(rec.industry === args.industry && rec.role === args.role)
+    );
+
+    // Update the recommendations array
+    await ctx.db.patch(args.recommendationId, {
+      recommendations: updatedRecommendations,
+    });
+
+    return await ctx.db.get(args.recommendationId);
+  },
+});
