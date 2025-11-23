@@ -1,5 +1,34 @@
 # Changelog
 
+## [Career Detail UI] - 2025-11-23
+
+### Added - Career Detail Page with Phases & Tasks
+**Created comprehensive career detail page with gamified task system:**
+
+**Components:**
+- `components/career/PhaseCard.tsx`: Phase display with locked/unlocked/in-progress/completed states, progress bar showing task completion
+- `components/career/TaskItem.tsx`: Task checkbox with track icons (learning/projects/networking/simulator), XP badges, completion toggle
+
+**Career Detail Page (`app/career/[id]/page.tsx`):**
+- Career header: Shows name, industry, fit score, completion %, level with badges for streak and weekly tasks
+- XP progress bar integrated in header
+- Phase navigation: Grid of 4 phase cards, click to view phase tasks
+- Task list: Organized by 4 tracks (Learning, Projects, Networking, Simulator) with tab navigation
+- Task completion: Checkboxes update XP via updateTaskStatus → updateTaskProgress mutations
+- Phase unlocking: Backend automatically unlocks next phase at 70% completion
+- YouTube videos: Grid of video thumbnails with hover effects, links to external resources
+- Real-time updates: Toast notifications on task completion showing XP earned
+
+**Data Flow:**
+- Queries: `getActiveSelectedCareers` (career info), `getActionPlanByCareer` (phases/tasks/videos), `getCareerProgress` (XP/level/streak)
+- Mutations: `updateTaskStatus` (update task in actionPlans), `updateTaskProgress` (update careerProgress with XP/level calculation)
+
+**UI Features:**
+- Phase cards show lock icon for locked phases, play icon for unlocked, checkmark for completed
+- Task items have color-coded track badges (blue=learning, purple=projects, green=networking, orange=simulator)
+- Completed tasks show green background and strikethrough text
+- Video thumbnails use YouTube maxresdefault images with overlay play button
+
 ## [Dashboard UI] - 2025-11-23
 
 ### Added - Career Compass Dashboard with Gamification
