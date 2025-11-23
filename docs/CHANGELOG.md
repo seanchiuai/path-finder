@@ -1,5 +1,16 @@
 # Changelog
 
+## [Merged] - 2025-11-22
+
+### Merged PR #2: Multi-agent System
+- **Career Discovery UI**: Dashboard, recommendations, career details, my plan, onboarding, saved careers, interactive salary visualization
+- **Voice Flows**: Voice recorder, voice onboarding, direct/proxied TTS/STT with backend health checks
+- **AI Multi-Agent System**: Onboarding analysis, career recommendations, agent-run logging, action plan generation using SpoonOS
+- **Backend Expansion**: New schema tables (careerProfiles, careerRecommendations, actionPlans, agentRuns, resources, salaryDataPoints, savedCareers)
+- **Python Agents**: 7 specialized agents (skills, personality, passions, goals, values, recommendation, orchestrator)
+- **Documentation**: Python backend integration guide, demo guide, project state reports
+- **Stats**: 9,108 additions, 943 deletions
+
 ## [Unreleased] - 2025-01-22
 
 ### Added - OpenAI Realtime API Integration
