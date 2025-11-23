@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash, IconX, IconDollarSign, IconTrendingUp, IconClock, IconSparkles, IconCheck } from "@tabler/icons-react"
+import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash, IconX, IconCurrencyDollar, IconTrendingUp, IconClock, IconSparkles, IconCheck } from "@tabler/icons-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
@@ -552,7 +552,7 @@ export default function RecommendationsPage() {
                 <div className="space-y-2 mb-4">
                   {rec.medianSalary && (
                     <div className="flex items-center gap-2 text-sm">
-                      <IconDollarSign className="h-4 w-4 text-green-600" />
+                      <IconCurrencyDollar className="h-4 w-4 text-green-600" />
                       <span className="font-medium">Salary:</span>
                       <span className="text-muted-foreground">{rec.medianSalary}</span>
                     </div>
