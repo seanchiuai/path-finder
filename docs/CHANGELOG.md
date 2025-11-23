@@ -1,5 +1,16 @@
 # Changelog
 
+## [Video URL Field Fix] - 2025-11-23
+
+### Fixed - ArgumentValidationError on Career Plan Generation
+**Issue:** Front-end error "Object is missing the required field `url`" when generating career plans. Python backend returned video objects with videoId, title, channel but missing url field required by Convex schema.
+
+**Changes:**
+- **utils/youtube_search.py:53-59**: Added url field construction from videoId: `https://www.youtube.com/watch?v={videoId}`
+- Video objects now include all required fields for Convex validator
+
+**Flow:** YouTube API search → Returns videos with url → upsertCareerCompassPlan validates successfully → Plans generate without errors.
+
 ## [Default Project Auto-Init Fix] - 2025-11-23
 
 ### Fixed - "Default project not found" Error
