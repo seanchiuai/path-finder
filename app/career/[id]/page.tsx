@@ -22,7 +22,12 @@ import {
   Target,
   Youtube,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  DollarSign,
+  TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +53,11 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
   // State
   const [activePhaseId, setActivePhaseId] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpandedItems(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   if (!user) {
     return (
@@ -224,6 +234,11 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
           </div>
         </div>
 
+        {/* Grid Layout: Main Content + Sidebar */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Main Content - 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+
         {/* Tasks Section */}
         <Card className="bg-card/80 backdrop-blur-xl border-2 border-primary/20">
           <CardHeader>
@@ -272,6 +287,61 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                     No learning tasks in this phase
                   </p>
                 )}
+
+                {/* Learning Resources Section */}
+                {actionPlan.detailedPlan?.learningResources && actionPlan.detailedPlan.learningResources.length > 0 && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
+                      Recommended Resources
+                    </h4>
+                    <div className="space-y-2">
+                      {actionPlan.detailedPlan.learningResources.map((resource: any, index: number) => {
+                        const itemId = `learning-${index}`;
+                        const isExpanded = expandedItems[itemId];
+
+                        return (
+                          <Card key={index} className="p-3 hover:shadow-md transition-shadow">
+                            <button
+                              onClick={() => toggleExpand(itemId)}
+                              className="w-full flex items-start justify-between gap-2 text-left"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{resource.title}</p>
+                                <Badge variant="secondary" className="text-xs mt-1">
+                                  {resource.type}
+                                </Badge>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {resource.description}
+                                </p>
+                                {resource.url && (
+                                  <a
+                                    href={resource.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  >
+                                    Learn More
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Projects Tasks */}
@@ -289,6 +359,77 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                   <p className="text-center text-muted-foreground py-8">
                     No project tasks in this phase
                   </p>
+                )}
+
+                {/* Project Ideas Section */}
+                {actionPlan.detailedPlan?.projects && actionPlan.detailedPlan.projects.length > 0 && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
+                      Project Ideas
+                    </h4>
+                    <div className="space-y-2">
+                      {actionPlan.detailedPlan.projects.map((project: any, index: number) => {
+                        const itemId = `project-${index}`;
+                        const isExpanded = expandedItems[itemId];
+
+                        return (
+                          <Card key={index} className="p-3 hover:shadow-md transition-shadow">
+                            <button
+                              onClick={() => toggleExpand(itemId)}
+                              className="w-full flex items-start justify-between gap-2 text-left"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{project.title}</p>
+                                <div className="flex gap-2 mt-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`text-xs ${
+                                      project.difficulty === "beginner"
+                                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                        : project.difficulty === "intermediate"
+                                        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                    }`}
+                                  >
+                                    {project.difficulty}
+                                  </Badge>
+                                  {project.estimatedTime && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {project.estimatedTime}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {project.description}
+                                </p>
+                                {project.url && (
+                                  <a
+                                    href={project.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  >
+                                    View Project Guide
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </TabsContent>
 
@@ -308,6 +449,64 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                     No networking tasks in this phase
                   </p>
                 )}
+
+                {/* Networking Contacts Section */}
+                {actionPlan.detailedPlan?.networkingContacts && actionPlan.detailedPlan.networkingContacts.length > 0 && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
+                      Key Contacts
+                    </h4>
+                    <div className="space-y-2">
+                      {actionPlan.detailedPlan.networkingContacts.map((contact: any, index: number) => {
+                        const itemId = `contact-${index}`;
+                        const isExpanded = expandedItems[itemId];
+
+                        return (
+                          <Card key={index} className="p-3 hover:shadow-md transition-shadow">
+                            <button
+                              onClick={() => toggleExpand(itemId)}
+                              className="w-full flex items-start justify-between gap-2 text-left"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{contact.name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {contact.title} {contact.company && `at ${contact.company}`}
+                                </p>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t">
+                                {contact.why && (
+                                  <p className="text-sm text-muted-foreground mb-2">
+                                    <span className="font-medium">Why connect: </span>
+                                    {contact.why}
+                                  </p>
+                                )}
+                                {contact.linkedinUrl && (
+                                  <a
+                                    href={contact.linkedinUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  >
+                                    View LinkedIn Profile
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
 
               {/* Simulator Tasks */}
@@ -326,53 +525,130 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                     No simulator tasks in this phase
                   </p>
                 )}
+
+                {/* Interview Prep Section */}
+                {actionPlan.detailedPlan?.interviewPrep && actionPlan.detailedPlan.interviewPrep.length > 0 && (
+                  <div className="mt-6 pt-6 border-t">
+                    <h4 className="font-semibold mb-4 text-sm text-muted-foreground uppercase tracking-wide">
+                      Interview Resources
+                    </h4>
+                    <div className="space-y-2">
+                      {actionPlan.detailedPlan.interviewPrep.map((resource: any, index: number) => {
+                        const itemId = `interview-${index}`;
+                        const isExpanded = expandedItems[itemId];
+
+                        return (
+                          <Card key={index} className="p-3 hover:shadow-md transition-shadow">
+                            <button
+                              onClick={() => toggleExpand(itemId)}
+                              className="w-full flex items-start justify-between gap-2 text-left"
+                            >
+                              <div className="flex-1">
+                                <p className="font-medium text-sm">{resource.title}</p>
+                                <Badge variant="secondary" className="text-xs mt-1">
+                                  {resource.type}
+                                </Badge>
+                              </div>
+                              {isExpanded ? (
+                                <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              ) : (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                              )}
+                            </button>
+
+                            {isExpanded && (
+                              <div className="mt-3 pt-3 border-t">
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {resource.description}
+                                </p>
+                                {resource.url && (
+                                  <a
+                                    href={resource.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  >
+                                    Access Resource
+                                    <ExternalLink className="h-3 w-3" />
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
-        {/* Videos Section */}
-        {actionPlan.videos && actionPlan.videos.length > 0 && (
-          <Card className="bg-card/80 backdrop-blur-xl border-2 border-primary/20">
-            <CardHeader>
-              <CardTitle className="text-2xl flex items-center gap-2">
-                <Youtube className="w-6 h-6 text-red-500" />
-                Learning Resources
-              </CardTitle>
-              <CardDescription>
-                Curated video tutorials to help you master this career
-              </CardDescription>
-            </CardHeader>
+          </div>
+          {/* End Main Content */}
 
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {actionPlan.videos.map((video) => (
-                  <a
-                    key={video.videoId}
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group relative overflow-hidden rounded-lg border-2 border-border hover:border-primary/40 transition-all duration-300 hover:shadow-xl"
-                  >
-                    <div className="aspect-video bg-muted relative overflow-hidden">
-                      <img
-                        src={`https://img.youtube.com/vi/${video.videoId}/maxresdefault.jpg`}
-                        alt={video.title}
-                        className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-300"
-                      />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                        <Youtube className="w-12 h-12 text-white opacity-80 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </div>
-                    <div className="p-3">
-                      <p className="text-sm font-medium line-clamp-2">{video.title}</p>
-                    </div>
-                  </a>
-                ))}
+          {/* Sidebar - 1 column */}
+          <div className="space-y-6">
+            {/* Career Overview Card */}
+            <Card className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 p-6">
+              <h3 className="mb-4 text-lg font-semibold">Career Overview</h3>
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <DollarSign className="mt-1 h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div>
+                    <p className="text-sm font-medium">Median Salary</p>
+                    <p className="text-sm text-muted-foreground">
+                      {actionPlan.detailedPlan?.medianSalary || "Data not available"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="mt-1 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div>
+                    <p className="text-sm font-medium">10-Year Growth Outlook</p>
+                    <p className="text-sm text-muted-foreground">
+                      {actionPlan.detailedPlan?.growthOutlook || "Data not available"}
+                    </p>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </Card>
+
+            {/* Day in the Life Videos */}
+            {actionPlan.videos && actionPlan.videos.length > 0 && (
+              <Card className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 p-6">
+                <h3 className="mb-4 text-lg font-semibold flex items-center gap-2">
+                  <Youtube className="w-5 h-5 text-red-500" />
+                  Day in the Life
+                </h3>
+                <div className="space-y-4">
+                  {actionPlan.videos.slice(0, 3).map((video, index) => (
+                    <div key={index}>
+                      <div className="aspect-video rounded-lg overflow-hidden bg-muted mb-2">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={`https://www.youtube.com/embed/${video.videoId}`}
+                          title={video.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="border-0"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{video.title}</p>
+                      {video.channel && (
+                        <p className="text-xs text-muted-foreground/70 mt-1">{video.channel}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </div>
+          {/* End Sidebar */}
+        </div>
+        {/* End Grid Layout */}
       </div>
     </>
   );
