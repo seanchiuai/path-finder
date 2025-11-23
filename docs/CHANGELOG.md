@@ -1,5 +1,22 @@
 # Changelog
 
+## [Dynamic Career Generation] - 2025-11-23
+
+### Changed - LLM Generates Careers Dynamically
+**Major architectural change:** Removed hard-coded career database, LLM now generates personalized careers.
+
+**orchestrator_agent_v2.py:**
+- Switched from ToolCallAgent → BaseAgent (no tool dependencies)
+- Updated prompts to instruct LLM to generate careers from scratch
+- recommend() now calls LLM directly via chat_async
+- System prompt emphasizes creative, personalized career generation
+
+**Deleted:**
+- `career_library.py`: No longer using CAREER_LIBRARY constant (8 hard-coded careers)
+- `career_search_tool.py`: Tool no longer needed
+
+**Benefits:** More personalized recommendations tailored to unique user profiles vs limited preset options.
+
 ## [Schema Validation Fix] - 2025-11-23
 
 ### Fixed - Career Recommendations Validation Error
