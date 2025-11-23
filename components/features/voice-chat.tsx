@@ -21,7 +21,7 @@ export function VoiceChat() {
   const [text, setText] = useState("");
   const [selectedVoiceId, setSelectedVoiceId] = useState("21m00Tcm4TlvDq8ikWAM");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
+  // const [isPlaying, setIsPlaying] = useState(false);
   const [voices, setVoices] = useState<Voice[]>([]);
   const [loadingVoices, setLoadingVoices] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -235,7 +235,7 @@ export function VoiceChat() {
             <ol className="list-decimal list-inside space-y-1">
               <li>Start Python backend: <code className="bg-background px-1 rounded">cd python-backend && python main.py</code></li>
               <li>Add your ElevenLabs API key to <code className="bg-background px-1 rounded">python-backend/.env</code></li>
-              <li>Click "Check Backend Status" to verify connection</li>
+              <li>Click &quot;Check Backend Status&quot; to verify connection</li>
             </ol>
           </div>
         </div>

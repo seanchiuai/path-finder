@@ -1,473 +1,371 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
+from pydantic import BaseModel
+from typing import Dict, List, Optional
+import asyncio
+import sys
+from pathlib import Path
+try:
+    from spoon_career_agents import CareerAnalysisOrchestrator, ActionPlanAgent  # type: ignore
+    SPOON_AVAILABLE = True
+except Exception:
+    # Ensure local agents can be imported from current directory
+    sys.path.append(str(Path(__file__).parent))
+    from career_agents import AgentOrchestrator as LocalAgentOrchestrator, ActionPlanAgent as LocalActionPlanAgent
+    SPOON_AVAILABLE = False
 import os
 from dotenv import load_dotenv
 import logging
-from elevenlabs import VoiceSettings
-from elevenlabs.client import ElevenLabs
-import io
-
-load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize Spoon AI SDK
-try:
-    from spoon_ai.llm import LLMManager, ConfigurationManager
-    spoon_config_manager = ConfigurationManager()
-    spoon_llm_manager = LLMManager(spoon_config_manager)
-    SPOON_AI_AVAILABLE = True
-    logger.info("✅ Spoon AI SDK configuration loaded successfully")
-except ImportError:
-    SPOON_AI_AVAILABLE = False
-    spoon_config_manager = None
-    spoon_llm_manager = None
-    logger.warning("⚠️  Spoon AI SDK not installed. Install with: pip install spoon-ai-sdk")
-except Exception as e:
-    SPOON_AI_AVAILABLE = False
-    spoon_config_manager = None
-    spoon_llm_manager = None
-    logger.error(f"❌ Spoon AI configuration error: {str(e)}")
+load_dotenv()
 
-app = FastAPI(
-    title="Path Finder Python Backend",
-    description="Python microservice for ElevenLabs and Spoon AI integrations",
-    version="1.0.0"
-)
+app = FastAPI(title="Career OS AI Agents", version="1.0.0")
 
-# CORS configuration - restrict in production
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
+    allow_origins=["http://localhost:3000", "https://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Initialize ElevenLabs client
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-if not ELEVENLABS_API_KEY:
-    logger.warning("ELEVENLABS_API_KEY not set - voice features will be disabled")
-    elevenlabs_client = None
+# Initialize agents
+if SPOON_AVAILABLE:
+    try:
+        orchestrator = CareerAnalysisOrchestrator()
+        action_plan_agent = ActionPlanAgent()
+        logger.info("Using spoon_career_agents orchestrator")
+    except Exception:
+        orchestrator = LocalAgentOrchestrator()
+        action_plan_agent = LocalActionPlanAgent()
+        logger.info("Using local career_agents orchestrator (init fallback)")
 else:
-    elevenlabs_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+    orchestrator = LocalAgentOrchestrator()
+    action_plan_agent = LocalActionPlanAgent()
+    logger.info("Using local career_agents orchestrator (import fallback)")
 
-# Request/Response Models
-class TextToSpeechRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=5000, description="Text to convert to speech")
-    voice_id: str = Field(default="21m00Tcm4TlvDq8ikWAM", description="ElevenLabs voice ID")
-    model_id: str = Field(default="eleven_multilingual_v2", description="ElevenLabs model ID")
-    stability: float = Field(default=0.5, ge=0.0, le=1.0, description="Voice stability")
-    similarity_boost: float = Field(default=0.75, ge=0.0, le=1.0, description="Voice similarity boost")
-    style: float = Field(default=0.0, ge=0.0, le=1.0, description="Voice style exaggeration")
-    use_speaker_boost: bool = Field(default=True, description="Enable speaker boost")
+class OnboardingData(BaseModel):
+    userId: str
+    background: str
+    skills: str
+    interests: str
+    goals: str
+    values: str
+    personality: Optional[str] = None
 
-class TextToSpeechResponse(BaseModel):
-    audio_base64: Optional[str] = None
-    error: Optional[str] = None
-    character_count: int
-    voice_id: str
+class CareerAnalysisRequest(BaseModel):
+    userId: str
+    careerId: str
+    timeframe: str = "6_months"  # 3_months, 6_months, 1_year
 
-class SpeechToTextRequest(BaseModel):
-    audio_base64: str = Field(..., description="Base64 encoded audio data")
-    model: str = Field(default="whisper-1", description="Speech recognition model")
-
-class SpeechToTextResponse(BaseModel):
-    text: str
-    error: Optional[str] = None
-
-class SpoonAIRequest(BaseModel):
-    prompt: str = Field(..., description="User prompt for Spoon AI agent")
-    agent_type: str = Field(default="general", description="Type of agent to use")
-    context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context for the agent")
-    provider: Optional[str] = Field(default=None, description="LLM provider (gemini, openai, anthropic, etc.)")
-    model: Optional[str] = Field(default=None, description="Specific model to use")
-
-class SpoonAIResponse(BaseModel):
-    response: str
-    agent_type: str
-    provider_used: str
-    model_used: str
-    error: Optional[str] = None
-
-class HealthResponse(BaseModel):
-    status: str
-    elevenlabs_configured: bool
-    spoon_ai_available: bool
-    spoon_ai_providers: List[str]
-    version: str
-
-# Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint with API information"""
-    return {
-        "name": "Path Finder Python Backend",
-        "version": "1.0.0",
-        "status": "running",
-        "docs": "/docs",
-        "health": "/health",
-        "endpoints": {
-            "voice": {
-                "tts": "POST /api/voice/tts",
-                "tts_stream": "POST /api/voice/tts-stream",
-                "voices": "GET /api/voice/voices",
-                "stt": "POST /api/voice/stt"
-            },
-            "spoon_ai": {
-                "execute": "POST /api/spoon-ai/execute",
-                "toolkit": "POST /api/spoon-ai/toolkit"
-            }
-        }
-    }
+    return {"message": "Career OS AI Agents API", "status": "running"}
 
-# Favicon endpoint (prevent 404s)
-@app.get("/favicon.ico")
-async def favicon():
-    """Return empty response for favicon requests"""
-    return JSONResponse(content={}, status_code=204)
-
-# Health check endpoint
-@app.get("/health", response_model=HealthResponse)
-async def health_check():
-    """Health check endpoint to verify service status"""
-    spoon_providers = []
-    if SPOON_AI_AVAILABLE:
-        try:
-            if os.getenv("GEMINI_API_KEY"):
-                spoon_providers.append("gemini")
-            if os.getenv("OPENAI_API_KEY"):
-                spoon_providers.append("openai")
-            if os.getenv("ANTHROPIC_API_KEY"):
-                spoon_providers.append("anthropic")
-            if os.getenv("DEEPSEEK_API_KEY"):
-                spoon_providers.append("deepseek")
-            if os.getenv("OPENROUTER_API_KEY"):
-                spoon_providers.append("openrouter")
-        except Exception:
-            pass
-
-    return HealthResponse(
-        status="healthy",
-        elevenlabs_configured=ELEVENLABS_API_KEY is not None,
-        spoon_ai_available=SPOON_AI_AVAILABLE,
-        spoon_ai_providers=spoon_providers,
-        version="1.0.0"
-    )
-
-# ElevenLabs Text-to-Speech
-@app.post("/api/voice/tts", response_model=TextToSpeechResponse)
-async def text_to_speech(request: TextToSpeechRequest):
-    """
-    Convert text to speech using ElevenLabs API
-
-    Returns audio as base64 encoded string for easy transport
-    """
-    if not elevenlabs_client:
-        raise HTTPException(
-            status_code=503,
-            detail="ElevenLabs API not configured. Set ELEVENLABS_API_KEY environment variable."
-        )
-
+@app.post("/api/analyze-onboarding")
+async def analyze_onboarding(data: OnboardingData):
+    """Analyze user onboarding data and generate career recommendations."""
     try:
-        logger.info(f"Generating speech for {len(request.text)} characters with voice {request.voice_id}")
-
-        # Generate audio
-        audio_generator = elevenlabs_client.text_to_speech.convert(
-            text=request.text,
-            voice_id=request.voice_id,
-            model_id=request.model_id,
-            voice_settings=VoiceSettings(
-                stability=request.stability,
-                similarity_boost=request.similarity_boost,
-                style=request.style,
-                use_speaker_boost=request.use_speaker_boost,
-            ),
-        )
-
-        # Collect audio bytes
-        audio_bytes = b"".join(chunk for chunk in audio_generator)
-
-        # Convert to base64 for JSON response
-        import base64
-        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
-
-        logger.info(f"Successfully generated {len(audio_bytes)} bytes of audio")
-
-        return TextToSpeechResponse(
-            audio_base64=audio_base64,
-            character_count=len(request.text),
-            voice_id=request.voice_id
-        )
-
-    except Exception as e:
-        logger.error(f"TTS error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Text-to-speech generation failed: {str(e)}")
-
-# ElevenLabs Text-to-Speech Streaming
-@app.post("/api/voice/tts-stream")
-async def text_to_speech_stream(request: TextToSpeechRequest):
-    """
-    Convert text to speech using ElevenLabs API with streaming response
-
-    Returns audio stream directly for lower latency
-    """
-    if not elevenlabs_client:
-        raise HTTPException(
-            status_code=503,
-            detail="ElevenLabs API not configured"
-        )
-
-    try:
-        logger.info(f"Streaming speech for {len(request.text)} characters")
-
-        audio_generator = elevenlabs_client.text_to_speech.convert(
-            text=request.text,
-            voice_id=request.voice_id,
-            model_id=request.model_id,
-            voice_settings=VoiceSettings(
-                stability=request.stability,
-                similarity_boost=request.similarity_boost,
-                style=request.style,
-                use_speaker_boost=request.use_speaker_boost,
-            ),
-        )
-
-        return StreamingResponse(
-            audio_generator,
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": "attachment; filename=speech.mp3"
-            }
-        )
-
-    except Exception as e:
-        logger.error(f"TTS streaming error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Streaming failed: {str(e)}")
-
-# Get available voices
-@app.get("/api/voice/voices")
-async def get_voices():
-    """Get list of available ElevenLabs voices"""
-    if not elevenlabs_client:
-        raise HTTPException(
-            status_code=503,
-            detail="ElevenLabs API not configured"
-        )
-
-    try:
-        voices = elevenlabs_client.voices.get_all()
+        # Run the orchestrator to analyze user data
+        # Support both spoon_career_agents style and local AgentOrchestrator
+        if hasattr(orchestrator, "analyze_career"):
+            analysis_result = await orchestrator.analyze_career(f"""
+            Background: {data.background}
+            Skills: {data.skills}
+            Interests: {data.interests}
+            Goals: {data.goals}
+            Values: {data.values}
+            Personality: {data.personality or 'Not specified'}
+            """)
+            recommendations = analysis_result.get("recommendations", [])
+            summary = analysis_result
+        else:
+            combined = await orchestrator.run_full_analysis({
+                "background": data.background,
+                "skills": data.skills,
+                "interests": data.interests,
+                "goals": data.goals,
+                "values": data.values,
+                "personality": data.personality or ""
+            })
+            recommendations = combined.get("recommendations", [])
+            summary = combined.get("analysis_summary", {})
+        
         return {
-            "voices": [
-                {
-                    "voice_id": voice.voice_id,
-                    "name": voice.name,
-                    "category": voice.category,
-                    "description": voice.description,
-                }
-                for voice in voices.voices
-            ]
+            "success": True,
+            "userId": data.userId,
+            "analysis": summary,
+            "recommendations": recommendations,
+            "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
-        logger.error(f"Error fetching voices: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to fetch voices: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-# Speech-to-Text (using OpenAI Whisper via ElevenLabs or direct integration)
-@app.post("/api/voice/stt", response_model=SpeechToTextResponse)
-async def speech_to_text(request: SpeechToTextRequest):
-    """
-    Convert speech to text
-
-    Note: This is a placeholder. You can integrate:
-    - OpenAI Whisper API
-    - ElevenLabs speech recognition (if available)
-    - Google Speech-to-Text
-    - Assembly AI
-    """
+@app.post("/api/generate-action-plan")
+async def generate_action_plan(request: CareerAnalysisRequest):
+    """Generate a detailed action plan for a specific career path."""
     try:
-        # Decode base64 audio
-        import base64
-        audio_bytes = base64.b64decode(request.audio_base64)
-
-        # TODO: Implement actual speech-to-text integration
-        # For now, return placeholder
-        logger.warning("Speech-to-text not yet implemented - returning placeholder")
-
-        return SpeechToTextResponse(
-            text="[Speech-to-text not yet implemented - integrate Whisper/Assembly AI here]",
-            error="Not implemented"
+        # Get career details and user profile from Convex (mock for now)
+        career_data = {
+            "career_id": request.careerId,
+            "title": "Software Engineer",  # This would come from Convex
+            "current_skills": ["JavaScript", "React", "HTML/CSS"],
+            "target_skills": ["Python", "Machine Learning", "Data Structures"],
+            "salary_range": "$80,000 - $120,000",
+            "growth_potential": "High"
+        }
+        
+        # Generate action plan
+        action_plan = await action_plan_agent.generate_plan(
+            career_data=career_data,
+            timeframe=request.timeframe
         )
-
+        
+        return {
+            "success": True,
+            "userId": request.userId,
+            "careerId": request.careerId,
+            "timeframe": request.timeframe,
+            "actionPlan": action_plan,
+            "timestamp": asyncio.get_event_loop().time()
+        }
     except Exception as e:
-        logger.error(f"STT error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Speech-to-text failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Action plan generation failed: {str(e)}")
 
-# Spoon AI Integration
-@app.post("/api/spoon-ai/execute", response_model=SpoonAIResponse)
-async def execute_spoon_ai_agent(request: SpoonAIRequest):
-    """
-    Execute Spoon AI agent with user prompt
+class OnboardingStartRequest(BaseModel):
+    transcript: str
+    resume_text: Optional[str] = None
 
-    Spoon AI is a powerful agent framework that can:
-    - Execute complex workflows
-    - Use various LLM providers (Gemini, OpenAI, Claude, etc.)
-    - Access toolkits for specific tasks
-    - Maintain context across interactions
-    """
-    if not SPOON_AI_AVAILABLE:
-        raise HTTPException(
-            status_code=503,
-            detail="Spoon AI SDK not installed. Install with: pip install spoon-ai-sdk"
-        )
-
+@app.post("/api/onboarding/start")
+async def onboarding_start(req: OnboardingStartRequest):
+    """Run full analysis and return structured profile and recommendations."""
     try:
-        logger.info(f"Executing Spoon AI agent: {request.agent_type}")
+        if hasattr(orchestrator, "run_full_analysis"):
+            combined = await orchestrator.run_full_analysis({
+                "background": req.transcript,
+                "skills": req.transcript,
+                "interests": req.transcript,
+                "goals": req.transcript,
+                "values": req.transcript,
+                "resume": req.resume_text or ""
+            })
+            career_profile = combined.get("analysis_summary", {})
+            recommendations = combined.get("recommendations", [])
+            session_id = combined.get("analysis_id")
+        else:
+            analysis_result = await orchestrator.analyze_career(req.transcript)
+            career_profile = analysis_result
+            recommendations = analysis_result.get("recommendations", [])
+            session_id = "session-" + str(hash(req.transcript))
 
-        # Determine provider and model
-        provider = request.provider or os.getenv("DEFAULT_LLM_PROVIDER", "openai")
-        model = request.model or os.getenv("DEFAULT_MODEL", "gpt-4")
-
-        # Build messages with context
-        messages = []
-
-        # Add system message
-        system_message = f"You are a helpful AI assistant specialized in {request.agent_type} tasks."
-        if request.context:
-            context_str = "\n".join([f"{k}: {v}" for k, v in request.context.items()])
-            system_message += f"\n\nContext:\n{context_str}"
-
-        messages.append({"role": "system", "content": system_message})
-        messages.append({"role": "user", "content": request.prompt})
-
-        # Execute using LLMManager
-        import asyncio
-        response_obj = await asyncio.create_task(
-            spoon_llm_manager.chat(
-                messages=messages,
-                provider=provider,
-                model=model
-            )
-        )
-
-        # Extract response content
-        response_text = response_obj.get("content", str(response_obj))
-
-        logger.info(f"Spoon AI response generated successfully")
-
-        return SpoonAIResponse(
-            response=response_text,
-            agent_type=request.agent_type,
-            provider_used=provider,
-            model_used=model
-        )
-
-    except ImportError as e:
-        logger.error(f"Spoon AI import error: {str(e)}")
-        raise HTTPException(
-            status_code=503,
-            detail=f"Spoon AI components not available: {str(e)}"
-        )
+        return {
+            "success": True,
+            "orchestratorSessionId": session_id,
+            "careerProfile": career_profile,
+            "recommendedRoles": recommendations,
+        }
     except Exception as e:
-        logger.error(f"Spoon AI execution error: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Spoon AI execution failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Onboarding start failed: {str(e)}")
 
-# Spoon AI Toolkit Demo
-@app.post("/api/spoon-ai/toolkit")
-async def use_spoon_ai_toolkit(
-    toolkit_name: str = Form(...),
-    operation: str = Form(...),
-    params: str = Form(default="{}")
-):
-    """
-    Use Spoon AI toolkits for specialized operations
+class OnboardingLLMRequest(BaseModel):
+    history: List[Dict[str, str]]  # [{role: "user"|"assistant", content: "..."}]
 
-    Available toolkits (if spoon-toolkits installed):
-    - web_scraping: Extract data from websites
-    - data_analysis: Analyze datasets
-    - file_operations: File manipulation
-    - api_integration: Call external APIs
-    """
-    if not SPOON_AI_AVAILABLE:
-        raise HTTPException(
-            status_code=503,
-            detail="Spoon AI SDK not installed"
-        )
+@app.post("/api/onboarding/llm-response")
+async def onboarding_llm_response(req: OnboardingLLMRequest):
+    """Return the next onboarding question based on simple state machine."""
+    try:
+        questions = [
+            "Tell me about your background and experience.",
+            "What skills do you have and enjoy using?",
+            "What industries or domains interest you?",
+            "What are your near-term career goals?",
+            "What work values matter most to you?"
+        ]
+        # Count user turns to select next question
+        user_turns = [m for m in req.history if m.get("role") == "user"]
+        if len(user_turns) >= len(questions):
+            return {"success": True, "next": "Great! You're all set—press Finish & Analyze."}
+        idx = len(user_turns)
+        next_q = questions[idx]
+        return {"success": True, "next": next_q}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM response failed: {str(e)}")
 
+@app.get("/api/data/career-details")
+async def career_details(role: str, industry: Optional[str] = None):
+    """Return salary bell curve and learning/network resources for a role."""
     try:
         import json
-        params_dict = json.loads(params)
+        from pathlib import Path
+        base = Path(__file__).parent / "data"
+        salary_path = base / "mock_salary_data.json"
+        resources_path = base / "mock_resources.json"
+        salary = json.loads(salary_path.read_text())
+        resources = json.loads(resources_path.read_text())
 
-        logger.info(f"Using Spoon AI toolkit: {toolkit_name}, operation: {operation}")
+        career_salary = salary["careers"].get(role)
+        career_resources = resources["careers"].get(role, {"resources": []})
+        if not career_salary:
+            raise HTTPException(status_code=404, detail="Role not found")
 
-        # TODO: Implement toolkit usage when spoon-toolkits patterns are documented
-        # Example pattern (adjust based on actual Spoon AI toolkit API):
-        # from spoon_toolkits.web_scraping import WebScrapingToolkit
-        # toolkit = WebScrapingToolkit()
-        # result = toolkit.execute(operation, params_dict)
-
-        return JSONResponse(content={
-            "toolkit": toolkit_name,
-            "operation": operation,
-            "status": "success",
-            "message": "Toolkit integration ready - implement specific toolkit logic here",
-            "params": params_dict
-        })
-
-    except Exception as e:
-        logger.error(f"Spoon AI toolkit error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Toolkit operation failed: {str(e)}")
-
-# Advanced ML endpoint example
-@app.post("/api/ml/analyze")
-async def analyze_content(
-    text: str = Form(...),
-    analysis_type: str = Form(default="sentiment")
-):
-    """
-    Perform advanced ML analysis
-
-    This is where you can add heavy ML processing that's better suited for Python:
-    - Sentiment analysis
-    - Named entity recognition
-    - Topic modeling
-    - Custom model inference
-    """
-    try:
-        logger.info(f"Analyzing content: type={analysis_type}, length={len(text)}")
-
-        # TODO: Add your ML models here
-        # Example with transformers:
-        # from transformers import pipeline
-        # analyzer = pipeline(analysis_type)
-        # result = analyzer(text)
-
-        result = {
-            "analysis_type": analysis_type,
-            "text_length": len(text),
-            "result": "ML analysis placeholder - add your models here"
+        return {
+            "success": True,
+            "role": role,
+            "industry": industry or career_salary.get("industry"),
+            "salaryDataPoints": career_salary.get("salaryDataPoints", []),
+            "resources": career_resources.get("resources", [])
         }
-
-        return JSONResponse(content=result)
-
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"ML analysis error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get career details: {str(e)}")
+
+@app.get("/api/career-insights/{career_id}")
+async def get_career_insights(career_id: str):
+    """Get detailed insights for a specific career path."""
+    try:
+        # Mock career insights (in real implementation, this would query a database)
+        insights = {
+            "career_id": career_id,
+            "title": "Data Scientist",
+            "description": "Analyze complex data to help organizations make better decisions",
+            "required_skills": ["Python", "Statistics", "Machine Learning", "SQL", "Data Visualization"],
+            "average_salary": "$95,000 - $140,000",
+            "job_growth": "35% (Much faster than average)",
+            "education_requirements": "Bachelor's degree minimum, Master's preferred",
+            "work_environment": "Office, Remote, Hybrid",
+            "typical_day": [
+                "Analyze datasets using statistical methods",
+                "Build predictive models",
+                "Create data visualizations and reports",
+                "Collaborate with cross-functional teams",
+                "Present findings to stakeholders"
+            ],
+            "career_path": [
+                "Junior Data Analyst",
+                "Data Analyst",
+                "Senior Data Analyst",
+                "Data Scientist",
+                "Senior Data Scientist",
+                "Principal Data Scientist"
+            ]
+        }
+        
+        return {
+            "success": True,
+            "insights": insights
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get career insights: {str(e)}")
+
+@app.post("/api/test-agents")
+async def test_agents():
+    """Test endpoint to verify all agents are working correctly."""
+    try:
+        test_data = {
+            "background": "Computer Science graduate with 2 years of web development experience",
+            "skills": "JavaScript, React, Node.js, HTML/CSS, Git",
+            "interests": "AI, machine learning, data visualization, user experience design",
+            "goals": "Want to transition into AI/ML engineering role within 1 year",
+            "values": "Innovation, continuous learning, work-life balance, meaningful impact"
+        }
+        
+        result = await orchestrator.analyze_career(f"""
+        Background: {test_data['background']}
+        Skills: {test_data['skills']}
+        Interests: {test_data['interests']}
+        Goals: {test_data['goals']}
+        Values: {test_data['values']}
+        """)
+        return {
+            "success": True,
+            "test_result": result
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent test failed: {str(e)}")
+
+# Voice integration endpoints
+class VoiceTTSRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "alloy"
+    speed: Optional[float] = 1.0
+
+class VoiceSTTRequest(BaseModel):
+    audio_data: str  # Base64 encoded audio
+    language: Optional[str] = "en"
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Convex and frontend monitoring"""
+    return {
+        "status": "healthy",
+        "service": "Career OS AI Agents",
+        "timestamp": asyncio.get_event_loop().time(),
+        "agents_ready": True
+    }
+
+@app.post("/api/voice/tts")
+async def text_to_speech(request: VoiceTTSRequest):
+    """Convert text to speech using OpenAI TTS"""
+    try:
+        # For now, return a mock response
+        # In production, integrate with OpenAI TTS API
+        return {
+            "success": True,
+            "audio_url": f"https://mock-tts.audio/{hash(request.text)}.mp3",
+            "voice": request.voice,
+            "text": request.text
+        }
+    except Exception as e:
+        logger.error(f"TTS error: {e}")
+        raise HTTPException(status_code=500, detail=f"TTS failed: {str(e)}")
+
+@app.get("/api/voice/voices")
+async def list_voices():
+    """List available TTS voices"""
+    return {
+        "voices": [
+            {"id": "alloy", "name": "Alloy", "language": "en", "gender": "neutral"},
+            {"id": "echo", "name": "Echo", "language": "en", "gender": "male"},
+            {"id": "fable", "name": "Fable", "language": "en", "gender": "neutral"},
+            {"id": "onyx", "name": "Onyx", "language": "en", "gender": "male"},
+            {"id": "nova", "name": "Nova", "language": "en", "gender": "female"},
+            {"id": "shimmer", "name": "Shimmer", "language": "en", "gender": "female"}
+        ]
+    }
+
+@app.post("/api/voice/stt")
+async def speech_to_text(req: Request):
+    """Convert speech to text using OpenAI Whisper (mock). Accepts audio_data or audio_base64."""
+    try:
+        payload = await req.json()
+        language = payload.get("language", "en")
+        # For now, return a mock transcription
+        mock_transcriptions = [
+            "I'm interested in transitioning from marketing to product management.",
+            "I have five years of experience in software development and want to move into AI.",
+            "My background is in finance but I'm passionate about environmental sustainability.",
+            "I'm a recent graduate looking to start a career in data science.",
+            "I want to leverage my design skills to move into UX research."
+        ]
+        import random
+        transcription = random.choice(mock_transcriptions)
+        return {
+            "success": True,
+            "text": transcription,
+            "language": language,
+            "confidence": 0.95
+        }
+    except Exception as e:
+        logger.error(f"STT error: {e}")
+        raise HTTPException(status_code=500, detail=f"STT failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(
-        "main:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True,
-        log_level="info"
-    )
+    port = int(os.getenv("PORT", 8001))
+    uvicorn.run(app, host="0.0.0.0", port=port)

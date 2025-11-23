@@ -13,9 +13,9 @@ async function getUserId(ctx: QueryCtx): Promise<string> {
 }
 
 /**
- * Search bookmarks using vector embeddings
+ * Search saved careers using vector embeddings
  */
-export const searchBookmarks = query({
+export const searchSavedCareers = query({
   args: {
     embedding: v.array(v.float64()),
     projectId: v.optional(v.id("projects")),
@@ -37,7 +37,7 @@ export const searchBookmarks = query({
       // Fetch more results initially since we'll filter, then slice to limit
       const initialLimit = limit * 2;
       const allResults = await ctx.db
-        .query("bookmarks")
+        .query("savedCareers")
         .withSearchIndex("by_embedding", (q) =>
           q.search("embedding", args.embedding as any).eq("userId", userId)
         )
@@ -51,7 +51,7 @@ export const searchBookmarks = query({
 
     // No projectId filter - search normally
     return await ctx.db
-      .query("bookmarks")
+      .query("savedCareers")
       .withSearchIndex("by_embedding", (q) =>
         q.search("embedding", args.embedding as any).eq("userId", userId)
       )
@@ -60,9 +60,9 @@ export const searchBookmarks = query({
 });
 
 /**
- * Search bookmarks within a specific folder using vector embeddings
+ * Search saved careers within a specific folder using vector embeddings
  */
-export const searchBookmarksInFolder = query({
+export const searchSavedCareersInFolder = query({
   args: {
     embedding: v.array(v.float64()),
     folderId: v.id("folders"),
@@ -72,7 +72,7 @@ export const searchBookmarksInFolder = query({
     const userId = await getUserId(ctx);
 
     return await ctx.db
-      .query("bookmarks")
+      .query("savedCareers")
       .withSearchIndex("by_embedding", (q) =>
         q
           .search("embedding", args.embedding as any)

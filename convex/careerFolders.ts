@@ -88,17 +88,17 @@ async function buildFolderTree(
 ): Promise<FolderNode[]> {
   const folderMap = new Map<Id<"folders">, FolderNode>();
 
-  // Fetch all bookmarks for this user in a single query
-  const allBookmarks = await ctx.db
-    .query("bookmarks")
-    .withIndex("by_user", (q) => q.eq("userId", userId))
+  // Fetch all saved careers for this user in a single query
+  const allSavedCareers = await ctx.db
+    .query("savedCareers")
+    .filter((q) => q.eq(q.field("userId"), userId))
     .collect();
 
-  // Build a map counting bookmarks per folder
-  const bookmarkCountByFolder = new Map<Id<"folders">, number>();
-  for (const bookmark of allBookmarks) {
-    const count = bookmarkCountByFolder.get(bookmark.folderId) || 0;
-    bookmarkCountByFolder.set(bookmark.folderId, count + 1);
+  // Build a map counting saved careers per folder
+  const savedCareerCountByFolder = new Map<Id<"folders">, number>();
+  for (const savedCareer of allSavedCareers) {
+    const count = savedCareerCountByFolder.get(savedCareer.folderId) || 0;
+    savedCareerCountByFolder.set(savedCareer.folderId, count + 1);
   }
 
   // Initialize all folders with children array using the count map
@@ -106,7 +106,7 @@ async function buildFolderTree(
     folderMap.set(folder._id, {
       ...folder,
       children: [],
-      bookmarkCount: bookmarkCountByFolder.get(folder._id) || 0,
+      bookmarkCount: savedCareerCountByFolder.get(folder._id) || 0,
     });
   }
 
@@ -153,6 +153,44 @@ export const listFoldersInProject = query({
       .collect();
 
     return await buildFolderTree(ctx, folders, identity.subject);
+  },
+});
+
+// Get default folder for a project (creates one if none exists)
+export const getDefaultFolder = mutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Verify project access
+    const project = await ctx.db.get(args.projectId);
+    if (!project || project.userId !== identity.subject) {
+      throw new Error("Project not found or unauthorized");
+    }
+
+    // Get the first folder in the project, or create a default one
+    const folders = await ctx.db
+      .query("folders")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    if (folders.length > 0) {
+      return folders[0]; // Return first folder
+    }
+
+    // Create a default folder if none exists
+    const defaultFolderId = await ctx.db.insert("folders", {
+      projectId: args.projectId,
+      name: "My Careers",
+      userId: identity.subject,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(defaultFolderId);
   },
 });
 
@@ -468,14 +506,14 @@ async function deleteFolderRecursive(
     await deleteFolderRecursive(ctx, child._id, depth + 1);
   }
 
-  // Delete all bookmarks in this folder
-  const bookmarks = await ctx.db
-    .query("bookmarks")
-    .withIndex("by_folder", (q) => q.eq("folderId", folderId))
+  // Delete all saved careers in this folder
+  const savedCareers = await ctx.db
+    .query("savedCareers")
+    .filter((q) => q.eq(q.field("folderId"), folderId))
     .collect();
 
-  for (const bookmark of bookmarks) {
-    await ctx.db.delete(bookmark._id);
+  for (const savedCareer of savedCareers) {
+    await ctx.db.delete(savedCareer._id);
   }
 
   // Delete the folder itself

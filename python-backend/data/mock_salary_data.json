@@ -1,0 +1,164 @@
+{
+  "careers": {
+    "Software Engineer": {
+      "industry": "Technology",
+      "salaryDataPoints": [
+        {
+          "percentile": 10,
+          "salaryRange": {"min": 65000, "max": 75000},
+          "avgYearsExperience": 1,
+          "commonCertifications": ["AWS Cloud Practitioner", "Microsoft Azure Fundamentals"],
+          "exampleCompanies": ["Startups", "Small Tech Companies", "Consulting Firms"]
+        },
+        {
+          "percentile": 25,
+          "salaryRange": {"min": 80000, "max": 95000},
+          "avgYearsExperience": 2,
+          "commonCertifications": ["AWS Developer", "Google Cloud Professional"],
+          "exampleCompanies": ["Mid-size Tech Companies", "Financial Services", "Healthcare Tech"]
+        },
+        {
+          "percentile": 50,
+          "salaryRange": {"min": 100000, "max": 130000},
+          "avgYearsExperience": 4,
+          "commonCertifications": ["AWS Solutions Architect", "Certified Kubernetes Administrator"],
+          "exampleCompanies": ["Google", "Microsoft", "Amazon", "Meta"]
+        },
+        {
+          "percentile": 75,
+          "salaryRange": {"min": 140000, "max": 180000},
+          "avgYearsExperience": 7,
+          "commonCertifications": ["AWS Solutions Architect Professional", "Google Cloud Professional"],
+          "exampleCompanies": ["Senior roles at FAANG", "Fintech Companies", "Enterprise Software"]
+        },
+        {
+          "percentile": 90,
+          "salaryRange": {"min": 190000, "max": 250000},
+          "avgYearsExperience": 10,
+          "commonCertifications": ["AWS Solutions Architect Professional", "Google Cloud Expert"],
+          "exampleCompanies": ["Principal Engineer at FAANG", "Staff Engineer", "Engineering Manager"]
+        }
+      ]
+    },
+    "Product Manager": {
+      "industry": "Technology",
+      "salaryDataPoints": [
+        {
+          "percentile": 10,
+          "salaryRange": {"min": 70000, "max": 85000},
+          "avgYearsExperience": 1,
+          "commonCertifications": ["Certified Scrum Product Owner", "Pragmatic Marketing"],
+          "exampleCompanies": ["Startups", "Small Tech Companies"]
+        },
+        {
+          "percentile": 25,
+          "salaryRange": {"min": 90000, "max": 110000},
+          "avgYearsExperience": 2,
+          "commonCertifications": ["Certified Scrum Product Owner", "SAFe Product Owner"],
+          "exampleCompanies": ["Mid-size Tech Companies", "Financial Services"]
+        },
+        {
+          "percentile": 50,
+          "salaryRange": {"min": 120000, "max": 150000},
+          "avgYearsExperience": 4,
+          "commonCertifications": ["Certified Scrum Professional", "Pragmatic Marketing Certified"],
+          "exampleCompanies": ["Google", "Microsoft", "Amazon", "Apple"]
+        },
+        {
+          "percentile": 75,
+          "salaryRange": {"min": 160000, "max": 200000},
+          "avgYearsExperience": 7,
+          "commonCertifications": ["Certified Scrum Professional", "MBA Preferred"],
+          "exampleCompanies": ["Senior PM at FAANG", "Group Product Manager"]
+        },
+        {
+          "percentile": 90,
+          "salaryRange": {"min": 210000, "max": 300000},
+          "avgYearsExperience": 10,
+          "commonCertifications": ["Executive MBA", "Certified Scrum Trainer"],
+          "exampleCompanies": ["Director of Product", "VP of Product", "Chief Product Officer"]
+        }
+      ]
+    },
+    "Data Scientist": {
+      "industry": "Technology",
+      "salaryDataPoints": [
+        {
+          "percentile": 10,
+          "salaryRange": {"min": 75000, "max": 90000},
+          "avgYearsExperience": 1,
+          "commonCertifications": ["Google Data Analytics", "Microsoft Azure Data Fundamentals"],
+          "exampleCompanies": ["Startups", "Consulting Firms", "Research Institutions"]
+        },
+        {
+          "percentile": 25,
+          "salaryRange": {"min": 95000, "max": 115000},
+          "avgYearsExperience": 2,
+          "commonCertifications": ["AWS Machine Learning", "Google Cloud Data Engineer"],
+          "exampleCompanies": ["Tech Companies", "Financial Services", "Healthcare"]
+        },
+        {
+          "percentile": 50,
+          "salaryRange": {"min": 120000, "max": 150000},
+          "avgYearsExperience": 4,
+          "commonCertifications": ["AWS Machine Learning Specialty", "Google Cloud Professional Data Engineer"],
+          "exampleCompanies": ["Google", "Netflix", "Uber", "Airbnb"]
+        },
+        {
+          "percentile": 75,
+          "salaryRange": {"min": 160000, "max": 200000},
+          "avgYearsExperience": 7,
+          "commonCertifications": ["Senior Data Scientist Certifications", "PhD Preferred"],
+          "exampleCompanies": ["Senior Data Scientist at Tech Giants", "Lead Data Scientist"]
+        },
+        {
+          "percentile": 90,
+          "salaryRange": {"min": 210000, "max": 280000},
+          "avgYearsExperience": 10,
+          "commonCertifications": ["Principal Data Scientist", "Research Publications"],
+          "exampleCompanies": ["Principal Data Scientist", "Director of Data Science", "Chief Data Officer"]
+        }
+      ]
+    },
+    "UX Designer": {
+      "industry": "Design",
+      "salaryDataPoints": [
+        {
+          "percentile": 10,
+          "salaryRange": {"min": 55000, "max": 65000},
+          "avgYearsExperience": 1,
+          "commonCertifications": ["Google UX Design Certificate", "Adobe Certified Expert"],
+          "exampleCompanies": ["Startups", "Small Design Agencies", "Freelance"]
+        },
+        {
+          "percentile": 25,
+          "salaryRange": {"min": 70000, "max": 85000},
+          "avgYearsExperience": 2,
+          "commonCertifications": ["Nielsen Norman Group UX Certification", "Human Factors International"],
+          "exampleCompanies": ["Mid-size Companies", "Tech Companies", "Consulting Firms"]
+        },
+        {
+          "percentile": 50,
+          "salaryRange": {"min": 90000, "max": 120000},
+          "avgYearsExperience": 4,
+          "commonCertifications": ["Certified Usability Analyst", "Nielsen Norman Group Advanced"],
+          "exampleCompanies": ["Google", "Apple", "Microsoft", "Meta"]
+        },
+        {
+          "percentile": 75,
+          "salaryRange": {"min": 125000, "max": 160000},
+          "avgYearsExperience": 7,
+          "commonCertifications": ["Senior UX Certifications", "Design Leadership Programs"],
+          "exampleCompanies": ["Senior UX Designer at Tech Giants", "Lead UX Designer"]
+        },
+        {
+          "percentile": 90,
+          "salaryRange": {"min": 170000, "max": 220000},
+          "avgYearsExperience": 10,
+          "commonCertifications": ["Principal Designer Certifications", "Design Strategy Certifications"],
+          "exampleCompanies": ["Principal UX Designer", "Director of UX", "VP of Design"]
+        }
+      ]
+    }
+  }
+}

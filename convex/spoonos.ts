@@ -1,7 +1,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
+const PYTHON_API_URL = process.env.PYTHON_API_URL || "http://localhost:8001";
 
 /**
  * Process data using Spoon OS via Python backend

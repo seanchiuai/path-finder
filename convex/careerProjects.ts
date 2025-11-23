@@ -220,20 +220,20 @@ export const deleteProject = mutation({
       .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
       .collect();
 
-    // Collect all bookmark IDs across all folders in parallel
-    const bookmarksByFolder = await Promise.all(
+    // Collect all saved career IDs across all folders in parallel
+    const savedCareersByFolder = await Promise.all(
       folders.map(async (folder) => {
-        const bookmarks = await ctx.db
-          .query("bookmarks")
-          .withIndex("by_folder", (q) => q.eq("folderId", folder._id))
+        const savedCareers = await ctx.db
+          .query("savedCareers")
+          .filter((q) => q.eq(q.field("folderId"), folder._id))
           .collect();
-        return bookmarks;
+        return savedCareers;
       })
     );
 
-    // Flatten and delete all bookmarks in parallel
-    const allBookmarks = bookmarksByFolder.flat();
-    await Promise.all(allBookmarks.map((bookmark) => ctx.db.delete(bookmark._id)));
+    // Flatten and delete all saved careers in parallel
+    const allSavedCareers = savedCareersByFolder.flat();
+    await Promise.all(allSavedCareers.map((savedCareer) => ctx.db.delete(savedCareer._id)));
 
     // Delete all folders in parallel
     await Promise.all(folders.map((folder) => ctx.db.delete(folder._id)));
