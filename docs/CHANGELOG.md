@@ -1,5 +1,18 @@
 # Changelog
 
+## [Saved Careers Display Fix] - 2025-11-23
+
+### Fixed - Saved Careers Page Shows Selected Careers
+**Issues:** Wrong redirect, field mismatches (title vs careerName), matchScore format (expected 0-1 got 0-100), missing careerId, no generating status.
+
+**Changes:**
+- **Schema:** Added careerId, isGenerating fields + by_careerId index (convex/schema.ts:96,101,106)
+- **Mutations:** Updated createSavedCareer, added updateGeneratingStatus (convex/savedCareers.ts:93-215)
+- **Redirect:** /dashboard → /saved-careers (app/recommendations/page.tsx:206)
+- **Display:** Fixed career.title → careerName, matchScore format, added generating indicator (app/saved-careers/page.tsx:58-89)
+
+**Flow:** Select → Generate → Redirect to /saved-careers → Shows selected careers with names, scores, and "Generating..." status.
+
 ## [Select Button Fix] - 2025-11-23
 
 ### Fixed - Career Compass Selection Flow
