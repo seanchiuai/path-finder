@@ -1,5 +1,25 @@
 # Changelog
 
+## [README Update] - 2025-11-23
+
+### Updated - Project Documentation
+**README.md updated to accurately reflect PathFinder (Career OS):**
+
+**Changes:**
+- Updated project name from generic template to PathFinder (Career OS)
+- Updated tech stack: Added Python/FastAPI, SpoonOS, ElevenLabs Conversational AI
+- Added prerequisites: Python 3.9+, ElevenLabs account, OpenAI/Anthropic API key
+- Updated setup instructions: Python backend installation, ElevenLabs configuration
+- Enhanced environment variables: Added Python backend and ElevenLabs vars
+- Updated project structure: Reflects actual architecture with python-backend/, docs/, .claude/
+- Added key features section: Voice onboarding, multi-agent analysis, career recommendations
+- Updated database architecture: Convex schema details and Python backend integration
+- Enhanced troubleshooting: Python backend, ElevenLabs voice, SpoonOS agent errors
+- Updated deployment section: Vercel (frontend), Railway/Render (Python backend)
+- Added documentation references section
+
+**Flow:** Template description → PathFinder description with complete setup guide for hybrid Next.js + Python architecture.
+
 ## [Video URL Field Fix] - 2025-11-23
 
 ### Fixed - ArgumentValidationError on Career Plan Generation
