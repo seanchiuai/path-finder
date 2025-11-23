@@ -1,5 +1,7 @@
 # PathFinder (Career OS)
 
+# [Video Link](https://www.youtube.com/watch?v=aFFzd-Pxm28&feature=youtu.be)
+
 AI-powered career discovery platform using voice-based onboarding to understand users, then leveraging multi-agent analysis to match them with ideal career paths and provide actionable recommendations.
 
 ## 🚀 Tech Stack
