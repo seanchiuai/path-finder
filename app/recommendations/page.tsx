@@ -54,10 +54,12 @@ export default function RecommendationsPage() {
   const initializeProgress = useMutation(api.careerProgress.initializeProgress)
   const ensureDefaultFolder = useMutation(api.careerFolders.ensureDefaultFolder)
   const updateGeneratingStatus = useMutation(api.savedCareers.updateGeneratingStatus)
+  const initializeUserDefaults = useMutation(api.init.initializeUserDefaults)
 
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
   const [removingCareer, setRemovingCareer] = useState<string | null>(null)
+  const [isInitializing, setIsInitializing] = useState(false)
 
   // Handlers
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
@@ -146,10 +148,13 @@ export default function RecommendationsPage() {
 
       const result = await response.json()
 
-      // Ensure default folder exists for saving careers
+      // Ensure default project exists
       if (!defaultProject) {
-        throw new Error("Default project not found")
+        toast.error("Setting up your workspace. Please try again in a moment.")
+        return
       }
+
+      // Ensure default folder exists for saving careers
       const folder = await ensureDefaultFolder({ projectId: defaultProject._id })
       if (!folder) {
         throw new Error("Failed to create default folder")
@@ -346,6 +351,32 @@ export default function RecommendationsPage() {
     }
   }, [searchParams])
 
+  // Initialize default project if missing
+  useEffect(() => {
+    const initializeProject = async () => {
+      if (!user) return
+      if (defaultProject === undefined) return // Still loading
+      if (defaultProject !== null) return // Already exists
+      if (isInitializing) return // Already initializing
+
+      setIsInitializing(true)
+      try {
+        const result = await initializeUserDefaults({})
+        if (!result.initialized && !result.projectId) {
+          throw new Error("Failed to initialize default project")
+        }
+        // Project will be automatically loaded by the query
+      } catch (error) {
+        console.error("Failed to initialize default project:", error)
+        toast.error("Failed to initialize workspace. Please refresh the page.")
+      } finally {
+        setIsInitializing(false)
+      }
+    }
+
+    initializeProject()
+  }, [user, defaultProject, isInitializing, initializeUserDefaults])
+
   // Show analysis loading state
   if (isAnalyzing) {
     return <AnalysisLoading onComplete={() => setIsAnalyzing(false)} />
@@ -459,11 +490,11 @@ export default function RecommendationsPage() {
               <Button
                 size="lg"
                 onClick={handleGenerateActionPlans}
-                disabled={selectedCareers.size === 0 || isGeneratingPlans}
+                disabled={selectedCareers.size === 0 || isGeneratingPlans || isInitializing || !defaultProject}
                 className="gap-2"
               >
                 <IconSparkles className="w-5 h-5" />
-                {isGeneratingPlans ? "Generating Plans..." : `Generate Action Plans (${selectedCareers.size})`}
+                {isInitializing ? "Initializing..." : isGeneratingPlans ? "Generating Plans..." : `Generate Action Plans (${selectedCareers.size})`}
               </Button>
             </div>
           </CardContent>
