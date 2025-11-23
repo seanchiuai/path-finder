@@ -7,7 +7,8 @@ import { useUser } from "@clerk/nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash, IconX } from "@tabler/icons-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash, IconX, IconDollarSign, IconTrendingUp, IconClock, IconSparkles, IconCheck } from "@tabler/icons-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
@@ -24,6 +25,10 @@ export default function RecommendationsPage() {
   // Analyzing state
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisError, setAnalysisError] = useState<string | null>(null)
+
+  // Career selection state (Career Compass)
+  const [selectedCareers, setSelectedCareers] = useState<Set<string>>(new Set())
+  const [isGeneratingPlans, setIsGeneratingPlans] = useState(false)
 
   // Get default project and folder for saving careers
   const defaultProject = useQuery(
@@ -44,6 +49,10 @@ export default function RecommendationsPage() {
   const abandonRecommendations = useMutation(api.careerRecommendations.abandonRecommendations)
   const removeRecommendation = useMutation(api.careerRecommendations.removeRecommendation)
   const removeRecommendationFromProfile = useMutation(api.careerProfiles.removeRecommendationFromProfile)
+  const selectCareersMutation = useMutation(api.selectedCareers.selectCareers)
+  const upsertCareerCompassPlan = useMutation(api.actionPlans.upsertCareerCompassPlan)
+  const initializeProgress = useMutation(api.careerProgress.initializeProgress)
+
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
   const [removingCareer, setRemovingCareer] = useState<string | null>(null)
@@ -52,14 +61,14 @@ export default function RecommendationsPage() {
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
     const careerKey = `${career.career || career.role}-${career.industry}`
     setSelectingCareer(careerKey)
-    
+
     try {
       await selectRecommendation({
         recommendationId: recommendationId as Id<"careerRecommendations">,
         industry: career.industry,
-        role: career.career || career.role,
+        role: career.career || career.role || "",
       })
-      
+
       toast.success(`Selected ${career.career || career.role} as your career path!`)
       // Navigate to dashboard after selection
       router.push('/dashboard')
@@ -68,6 +77,108 @@ export default function RecommendationsPage() {
       toast.error("Failed to select career. Please try again.")
     } finally {
       setSelectingCareer(null)
+    }
+  }
+
+  const handleToggleCareerSelection = (careerId: string) => {
+    setSelectedCareers(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(careerId)) {
+        newSet.delete(careerId)
+      } else {
+        if (newSet.size >= 3) {
+          toast.error("You can only select up to 3 careers")
+          return prev
+        }
+        newSet.add(careerId)
+      }
+      return newSet
+    })
+  }
+
+  const handleGenerateActionPlans = async () => {
+    if (selectedCareers.size === 0) {
+      toast.error("Please select at least one career")
+      return
+    }
+
+    setIsGeneratingPlans(true)
+    try {
+      // Get selected career details from recommendations
+      const allRecommendations = [
+        ...(recommendations?.recommendations || []).map(r => ({
+          careerId: r.careerId || `${r.role}-${r.industry}`,
+          careerName: r.role,
+          industry: r.industry,
+          fitScore: r.matchScore,
+        })),
+        ...(userProfile?.aiAnalysisResults?.recommendations || []).map((r: any) => ({
+          careerId: `${r.career}-${r.industry}`,
+          careerName: r.career,
+          industry: r.industry,
+          fitScore: Math.round((r.match_score || 0) * 100),
+        })),
+      ]
+
+      const selectedCareerData = Array.from(selectedCareers)
+        .map(careerId => allRecommendations.find(r => r.careerId === careerId))
+        .filter(Boolean)
+
+      if (selectedCareerData.length === 0) {
+        throw new Error("Selected careers not found")
+      }
+
+      // Call Python backend to generate action plans
+      const response = await fetch('http://localhost:8001/api/selected-careers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          careerIds: Array.from(selectedCareers),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate action plans')
+      }
+
+      const result = await response.json()
+
+      // Save to Convex
+      for (const selectedCareer of result.selectedCareers) {
+        // Save selected career
+        await selectCareersMutation({
+          careerIds: [selectedCareer.careerId],
+          careers: [{
+            careerId: selectedCareer.careerId,
+            careerName: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.careerName || '',
+            industry: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.industry || '',
+            fitScore: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.fitScore || 0,
+          }],
+        })
+
+        // Save action plan
+        await upsertCareerCompassPlan({
+          careerId: selectedCareer.careerId,
+          phases: selectedCareer.phases,
+          tasks: selectedCareer.tasks,
+          videos: selectedCareer.videos || [],
+          detailedPlan: selectedCareer.detailedPlan,
+        })
+
+        // Initialize progress
+        await initializeProgress({
+          careerId: selectedCareer.careerId,
+        })
+      }
+
+      toast.success(`Generated action plans for ${result.selectedCareers.length} career${result.selectedCareers.length > 1 ? 's' : ''}!`)
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Failed to generate action plans:', error)
+      toast.error('Failed to generate action plans. Please try again.')
+    } finally {
+      setIsGeneratingPlans(false)
     }
   }
 
@@ -133,6 +244,14 @@ export default function RecommendationsPage() {
           career: careerName,
         })
       }
+
+      // Remove from selection if selected
+      setSelectedCareers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(careerKey)
+        return newSet
+      })
+
       toast.success(`Removed ${careerName} from recommendations`)
     } catch (error) {
       console.error("Failed to remove career:", error)
@@ -173,12 +292,18 @@ export default function RecommendationsPage() {
         aiAnalysisResults: undefined,
       })
 
-      // Normalize and save recommendations
+      // Normalize and save recommendations with Career Compass fields
       const normalized = (result.recommendedRoles || []).map((r: any) => ({
+        careerId: r.careerId || `${r.role || r.career}-${r.industry}`,
         industry: r.industry || "Technology",
         role: r.career || r.role,
         matchScore: Math.round((r.match_score ?? r.matchScore ?? 0) * 100),
-        matchExplanation: r.reasoning || r.matchExplanation || "",
+        matchExplanation: r.reasoning || r.matchExplanation || r.whyGoodFit || "",
+        // Career Compass fields
+        medianSalary: r.medianSalary,
+        growthOutlook: r.growthOutlook,
+        estimatedTime: r.estimatedTime,
+        summary: r.summary,
       }))
 
       await createCareerRecommendations({
@@ -304,7 +429,35 @@ export default function RecommendationsPage() {
           {isAbandoning ? "Abandoning..." : "Abandon & Start Over"}
         </Button>
       </div>
-      
+
+      {/* Career Selection Controls */}
+      {(recommendations?.recommendations?.length > 0 || userProfile?.aiAnalysisResults?.recommendations?.length > 0) && (
+        <Card className="mb-6 border-primary/50 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-lg mb-1">Select Your Career Paths</h3>
+                <p className="text-sm text-muted-foreground">
+                  Choose up to 3 careers to create personalized action plans with gamified progress tracking
+                </p>
+                <p className="text-sm font-medium mt-2">
+                  {selectedCareers.size}/3 careers selected
+                </p>
+              </div>
+              <Button
+                size="lg"
+                onClick={handleGenerateActionPlans}
+                disabled={selectedCareers.size === 0 || isGeneratingPlans}
+                className="gap-2"
+              >
+                <IconSparkles className="w-5 h-5" />
+                {isGeneratingPlans ? "Generating Plans..." : `Generate Action Plans (${selectedCareers.size})`}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Display AI Analysis Summary */}
       {userProfile?.aiAnalysisResults && (
         <Card className="mb-6">
@@ -338,54 +491,89 @@ export default function RecommendationsPage() {
           </CardContent>
         </Card>
       )}
-      
+
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {/* Display recommendations from AI analysis */}
-        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, index: number) => {
-          const careerKey = `${rec.career}-${rec.salary_range}`
+        {/* Display recommendations from Convex (Career Compass enhanced) */}
+        {recommendations?.recommendations?.map((rec, index) => {
+          const careerId = rec.careerId || `${rec.role}-${rec.industry}`
+          const careerKey = `${rec.role}-${rec.industry}`
+          const isSelected = selectedCareers.has(careerId)
+
           return (
-            <Card key={index} className="hover:shadow-lg transition-shadow relative">
+            <Card
+              key={`convex-${index}`}
+              className={`hover:shadow-lg transition-all relative ${isSelected ? 'ring-2 ring-primary' : ''}`}
+            >
+              {/* Selection Checkbox */}
+              <div className="absolute top-4 left-4 z-10">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => handleToggleCareerSelection(careerId)}
+                  className="h-5 w-5"
+                />
+              </div>
+
+              {/* Remove Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemoveCareer(rec, 'ai-analysis')}
+                onClick={() => handleRemoveCareer(rec, 'convex')}
                 disabled={removingCareer === careerKey}
               >
                 <IconX className="h-4 w-4" />
               </Button>
-              <CardHeader>
+
+              <CardHeader className="pt-12">
                 <div className="flex justify-between items-start pr-8">
                   <div>
-                    <CardTitle className="text-lg">{rec.career}</CardTitle>
-                    <CardDescription>{rec.salary_range}</CardDescription>
+                    <CardTitle className="text-lg">{rec.role}</CardTitle>
+                    <CardDescription>{rec.industry}</CardDescription>
                   </div>
-                  <Badge variant="secondary">{Math.round(rec.match_score * 100)}% Match</Badge>
+                  <Badge variant="secondary" className="gap-1">
+                    <IconCheck className="h-3 w-3" />
+                    {rec.matchScore}% Match
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Summary */}
+                {rec.summary && (
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {rec.summary}
+                  </p>
+                )}
+
                 <p className="text-sm text-muted-foreground mb-4">
-                  {rec.reasoning}
+                  {rec.matchExplanation}
                 </p>
-                <div className="mb-4">
-                  <p className="text-xs font-semibold mb-2">Required Skills:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {rec.required_skills.slice(0, 5).map((skill: string, i: number) => (
-                      <Badge key={i} variant="outline" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
+
+                {/* Career Compass Enhanced Fields */}
+                <div className="space-y-2 mb-4">
+                  {rec.medianSalary && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <IconDollarSign className="h-4 w-4 text-green-600" />
+                      <span className="font-medium">Salary:</span>
+                      <span className="text-muted-foreground">{rec.medianSalary}</span>
+                    </div>
+                  )}
+                  {rec.growthOutlook && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <IconTrendingUp className="h-4 w-4 text-blue-600" />
+                      <span className="font-medium">Growth:</span>
+                      <span className="text-muted-foreground">{rec.growthOutlook}</span>
+                    </div>
+                  )}
+                  {rec.estimatedTime && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <IconClock className="h-4 w-4 text-orange-600" />
+                      <span className="font-medium">Timeline:</span>
+                      <span className="text-muted-foreground">{rec.estimatedTime}</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleSelectCareer(rec, recommendations?._id || 'ai-analysis')}
-                    disabled={selectingCareer === careerKey}
-                  >
-                    {selectingCareer === careerKey ? "Choosing..." : "Choose This Career"}
-                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                     View Details
                   </Button>
@@ -397,43 +585,65 @@ export default function RecommendationsPage() {
             </Card>
           )
         })}
-        
-        {/* Display recommendations from Convex */}
-        {recommendations?.recommendations?.map((rec, index) => {
-          const careerKey = `${rec.role}-${rec.industry}`
+
+        {/* Display recommendations from AI analysis */}
+        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: any, index: number) => {
+          const careerId = `${rec.career}-${rec.industry || rec.salary_range}`
+          const careerKey = careerId
+          const isSelected = selectedCareers.has(careerId)
+
           return (
-            <Card key={`convex-${index}`} className="hover:shadow-lg transition-shadow relative">
+            <Card
+              key={`ai-${index}`}
+              className={`hover:shadow-lg transition-all relative ${isSelected ? 'ring-2 ring-primary' : ''}`}
+            >
+              {/* Selection Checkbox */}
+              <div className="absolute top-4 left-4 z-10">
+                <Checkbox
+                  checked={isSelected}
+                  onCheckedChange={() => handleToggleCareerSelection(careerId)}
+                  className="h-5 w-5"
+                />
+              </div>
+
+              {/* Remove Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 className="absolute top-2 right-2 h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemoveCareer(rec, 'convex')}
+                onClick={() => handleRemoveCareer(rec, 'ai-analysis')}
                 disabled={removingCareer === careerKey}
               >
                 <IconX className="h-4 w-4" />
               </Button>
-              <CardHeader>
+
+              <CardHeader className="pt-12">
                 <div className="flex justify-between items-start pr-8">
                   <div>
-                    <CardTitle className="text-lg">{rec.role}</CardTitle>
-                    <CardDescription>{rec.industry}</CardDescription>
+                    <CardTitle className="text-lg">{rec.career}</CardTitle>
+                    <CardDescription>{rec.salary_range}</CardDescription>
                   </div>
-                  <Badge variant="secondary">{rec.matchScore}% Match</Badge>
+                  <Badge variant="secondary" className="gap-1">
+                    <IconCheck className="h-3 w-3" />
+                    {Math.round(rec.match_score * 100)}% Match
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {rec.matchExplanation}
+                  {rec.reasoning}
                 </p>
+                <div className="mb-4">
+                  <p className="text-xs font-semibold mb-2">Required Skills:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {rec.required_skills?.slice(0, 5).map((skill: string, i: number) => (
+                      <Badge key={i} variant="outline" className="text-xs">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleSelectCareer(rec, recommendations!._id)}
-                    disabled={selectingCareer === careerKey}
-                  >
-                    {selectingCareer === careerKey ? "Choosing..." : "Choose This Career"}
-                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                     View Details
                   </Button>
