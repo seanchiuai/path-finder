@@ -111,10 +111,16 @@ export default defineSchema({
     userId: v.string(),
     agentRunId: v.string(), // Link to a specific agent run
     recommendations: v.array(v.object({
+      careerId: v.optional(v.string()), // Career Compass: Unique career identifier
       industry: v.string(),
       role: v.string(),
       matchScore: v.number(),
       matchExplanation: v.string(), // Detailed reasoning for the match
+      // Career Compass enhanced fields
+      medianSalary: v.optional(v.string()), // e.g., "$85,000 - $120,000"
+      growthOutlook: v.optional(v.string()), // e.g., "High growth (15% over 10 years)"
+      estimatedTime: v.optional(v.string()), // e.g., "6-12 months"
+      summary: v.optional(v.string()), // Brief overview of the career
     })),
     selectedRecommendation: v.optional(v.object({ // User's final choice
       industry: v.string(),
@@ -122,23 +128,85 @@ export default defineSchema({
     })),
     createdAt: v.number(),
   }).index("by_userId", ["userId"]),
+
+  // NEW: Stores up to 3 selected careers the user wants to pursue
+  selectedCareers: defineTable({
+    userId: v.string(),
+    careerId: v.string(), // References recommendation careerId
+    careerName: v.string(),
+    industry: v.string(),
+    fitScore: v.number(),
+    selectedAt: v.number(),
+    status: v.optional(v.union(
+      v.literal("active"),
+      v.literal("completed"),
+      v.literal("abandoned")
+    )),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_status", ["userId", "status"]),
   
   // NEW: Stores the final generated action plan.
   actionPlans: defineTable({
     userId: v.string(),
-    recommendationId: v.id("careerRecommendations"), // Link to the specific recommendation
-    timeframe: v.string(), // e.g., "3 months", "1 year"
-    generatedPlanMarkdown: v.string(), // The full markdown text of the plan
+    careerId: v.string(), // Link to selectedCareers
+    recommendationId: v.optional(v.id("careerRecommendations")), // Link to the specific recommendation
+    timeframe: v.optional(v.string()), // e.g., "3 months", "1 year"
+    generatedPlanMarkdown: v.optional(v.string()), // The full markdown text of the plan
+    // Career Compass: Enhanced phase/task structure
     phases: v.array(v.object({
-        title: v.string(),
-        duration: v.string(), // e.g., "1 month", "6 weeks"
-        steps: v.array(v.string()), // e.g., "Learn Python", "Build a portfolio project"
+      phaseId: v.number(), // 1-4
+      name: v.string(), // e.g., "Foundation", "Skill Building"
+      order: v.number(),
+      status: v.string(), // "locked" | "unlocked" | "in-progress" | "completed"
+      title: v.optional(v.string()), // Legacy field
+      duration: v.optional(v.string()), // Legacy: e.g., "1 month", "6 weeks"
+      steps: v.optional(v.array(v.string())), // Legacy: e.g., "Learn Python"
     })),
-    requiredSkills: v.array(v.string()),
-    recommendedProjects: v.array(v.string()), // Names or links to project ideas
-    suggestedInternshipsRoles: v.array(v.string()), // Intermediate steps
+    // Career Compass: Task management
+    tasks: v.array(v.object({
+      taskId: v.string(),
+      title: v.string(),
+      track: v.string(), // "learning" | "projects" | "networking" | "simulator"
+      phase: v.number(), // 1-4
+      xp: v.number(), // XP awarded on completion
+      status: v.string(), // "not_started" | "in_progress" | "completed"
+      description: v.optional(v.string()),
+    })),
+    // Career Compass: Video resources
+    videos: v.optional(v.array(v.object({
+      videoId: v.string(), // YouTube video ID
+      title: v.string(),
+      channel: v.optional(v.string()),
+      url: v.string(), // Full YouTube URL
+    }))),
+    // Legacy fields
+    requiredSkills: v.optional(v.array(v.string())),
+    recommendedProjects: v.optional(v.array(v.string())),
+    suggestedInternshipsRoles: v.optional(v.array(v.string())),
+    // Metadata
+    detailedPlan: v.optional(v.any()), // Career Compass detailed plan object
     createdAt: v.number(),
-  }).index("by_userId", ["userId"]),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_careerId", ["userId", "careerId"]),
+
+  // NEW: Gamification and progress tracking for selected careers
+  careerProgress: defineTable({
+    userId: v.string(),
+    careerId: v.string(), // References selectedCareers
+    xp: v.number(), // Total XP earned
+    level: v.number(), // Current level (calculated from XP)
+    completionPercent: v.number(), // 0-100%
+    streak: v.number(), // Consecutive days/tasks completed
+    tasksCompletedThisWeek: v.number(),
+    xpToNextLevel: v.number(), // XP needed to reach next level
+    lastTaskCompletedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_careerId", ["userId", "careerId"]),
 
   // NEW: Logs the inputs and outputs of each SpoonOS agent run for history and debugging.
   agentRuns: defineTable({

@@ -202,3 +202,173 @@ export const generateActionPlan = action({
     }
   },
 });
+
+/**
+ * Get action plan by careerId (Career Compass)
+ */
+export const getActionPlanByCareer = query({
+  args: {
+    careerId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    return await ctx.db
+      .query("actionPlans")
+      .withIndex("by_userId_careerId", (q) =>
+        q.eq("userId", identity.subject).eq("careerId", args.careerId)
+      )
+      .first();
+  },
+});
+
+/**
+ * Create or update action plan with Career Compass structure
+ */
+export const upsertCareerCompassPlan = mutation({
+  args: {
+    careerId: v.string(),
+    phases: v.array(
+      v.object({
+        phaseId: v.number(),
+        name: v.string(),
+        order: v.number(),
+        status: v.string(),
+        title: v.optional(v.string()),
+        duration: v.optional(v.string()),
+        steps: v.optional(v.array(v.string())),
+      })
+    ),
+    tasks: v.array(
+      v.object({
+        taskId: v.string(),
+        title: v.string(),
+        track: v.string(),
+        phase: v.number(),
+        xp: v.number(),
+        status: v.string(),
+        description: v.optional(v.string()),
+      })
+    ),
+    videos: v.optional(
+      v.array(
+        v.object({
+          videoId: v.string(),
+          title: v.string(),
+          channel: v.optional(v.string()),
+          url: v.string(),
+        })
+      )
+    ),
+    detailedPlan: v.optional(v.any()),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+
+    // Check if action plan already exists for this career
+    const existing = await ctx.db
+      .query("actionPlans")
+      .withIndex("by_userId_careerId", (q) =>
+        q.eq("userId", userId).eq("careerId", args.careerId)
+      )
+      .first();
+
+    if (existing) {
+      // Update existing plan
+      await ctx.db.patch(existing._id, {
+        phases: args.phases,
+        tasks: args.tasks,
+        videos: args.videos,
+        detailedPlan: args.detailedPlan,
+        updatedAt: Date.now(),
+      });
+      return await ctx.db.get(existing._id);
+    } else {
+      // Create new plan
+      const planId = await ctx.db.insert("actionPlans", {
+        userId,
+        careerId: args.careerId,
+        phases: args.phases,
+        tasks: args.tasks,
+        videos: args.videos,
+        detailedPlan: args.detailedPlan,
+        createdAt: Date.now(),
+      });
+      return await ctx.db.get(planId);
+    }
+  },
+});
+
+/**
+ * Update task status within an action plan
+ */
+export const updateTaskStatus = mutation({
+  args: {
+    careerId: v.string(),
+    taskId: v.string(),
+    newStatus: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const actionPlan = await ctx.db
+      .query("actionPlans")
+      .withIndex("by_userId_careerId", (q) =>
+        q.eq("userId", identity.subject).eq("careerId", args.careerId)
+      )
+      .first();
+
+    if (!actionPlan) {
+      throw new Error("Action plan not found");
+    }
+
+    // Update the task status
+    const updatedTasks = actionPlan.tasks.map((task: any) =>
+      task.taskId === args.taskId ? { ...task, status: args.newStatus } : task
+    );
+
+    // Update phases based on task completion
+    const updatedPhases = actionPlan.phases.map((phase: any) => {
+      const phaseTasks = updatedTasks.filter((t: any) => t.phase === phase.phaseId);
+      if (phaseTasks.length > 0) {
+        const completed = phaseTasks.filter((t: any) => t.status === "completed").length;
+        const completionRate = completed / phaseTasks.length;
+
+        if (completionRate >= 0.7) {
+          return { ...phase, status: "completed" };
+        } else if (completionRate > 0) {
+          return { ...phase, status: "in-progress" };
+        }
+      }
+      return phase;
+    });
+
+    // Unlock next phase if current phase is completed
+    for (let i = 0; i < updatedPhases.length; i++) {
+      if (updatedPhases[i].status === "completed" && i + 1 < updatedPhases.length) {
+        if (updatedPhases[i + 1].status === "locked") {
+          updatedPhases[i + 1] = { ...updatedPhases[i + 1], status: "unlocked" };
+        }
+      }
+    }
+
+    await ctx.db.patch(actionPlan._id, {
+      tasks: updatedTasks,
+      phases: updatedPhases,
+      updatedAt: Date.now(),
+    });
+
+    return await ctx.db.get(actionPlan._id);
+  },
+});
