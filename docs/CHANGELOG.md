@@ -19,6 +19,12 @@
 - `app/recommendations/page.tsx:267-276`: Destructive abandon button in header with trash icon, confirmation dialog, loading state
 - Redirects to voice-realtime onboarding after abandoning for fresh start
 
+**Individual career removal:**
+- `convex/careerRecommendations.ts:169-198`: `removeRecommendation` mutation filters out specific career from recommendations array
+- `convex/careerProfiles.ts:142-177`: `removeRecommendationFromProfile` mutation removes career from profile recommendations
+- `app/recommendations/page.tsx:348-356,406-414`: X button in top-right corner of each career card, hover turns destructive color
+- Supports removal from both AI analysis and Convex recommendation sources
+
 ### Enhanced - Dashboard Visual Design
 **Magical animated dashboard with glassmorphism:**
 - `components/AnimatedBackground.tsx`: Canvas-based animated background with floating gradient orbs and particle system using theme colors
