@@ -47,15 +47,15 @@ export const createCareerRecommendations = mutation({
   args: {
     agentRunId: v.string(),
     recommendations: v.array(v.object({
-      careerId: v.string(),
+      careerId: v.optional(v.string()),
       industry: v.string(),
       role: v.string(),
-      summary: v.string(),
+      summary: v.optional(v.string()),
       matchScore: v.number(),
       matchExplanation: v.string(),
-      medianSalary: v.string(),
-      growthOutlook: v.string(),
-      estimatedTime: v.string(),
+      medianSalary: v.optional(v.string()),
+      growthOutlook: v.optional(v.string()),
+      estimatedTime: v.optional(v.string()),
     })),
   },
   handler: async (ctx, args) => {
