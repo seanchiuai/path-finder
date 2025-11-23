@@ -1,16 +1,17 @@
 # Changelog
 
-## [Save Button Fix] - 2025-11-23
+## [Select Button Fix] - 2025-11-23
 
-### Fixed - Career Save Functionality
-**Root Cause:** getDefaultFolder was mutation called with useQuery, incompatible types, no error handling.
+### Fixed - Career Compass Selection Flow
+**Issue:** Select button was saving to database immediately instead of temporarily selecting careers for action plan generation.
 
 **Changes:**
-- **convex/careerFolders.ts:160-220**: Split into getDefaultFolder (query) + ensureDefaultFolder (mutation)
-- **app/recommendations/page.tsx:193-255**: Fixed TypeScript types for both data formats (Convex + AI analysis)
-- Added loading state, proper error handling, match_score normalization (0.0-1.0 → 0-100)
+- **app/recommendations/page.tsx:627-633,701-707**: Changed onClick from handleSaveCareer → handleToggleCareerSelection
+- Button shows "Selected ✓" (primary variant) when career is in selection
+- **Removed:** handleSaveCareer function, savingCareer state (no longer needed)
+- **Added:** Folder system save to handleGenerateActionPlans (saves selected careers when generating plans)
 
-**Result:** Save button now properly saves LLM-generated careers to Convex database.
+**Flow:** Click "Select" → Temporary selection → Counter updates "X/3" → "Generate Action Plans" enabled → Click generates plans + saves to folder + redirects to dashboard.
 
 ## [Dynamic Career Generation] - 2025-11-23
 
