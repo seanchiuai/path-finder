@@ -13,6 +13,18 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Enhanced - Dashboard Visual Design
+**Magical animated dashboard with glassmorphism:**
+- `components/AnimatedBackground.tsx`: Canvas-based animated background with floating gradient orbs and particle system using theme colors
+- **Glassmorphism**: All cards now use backdrop-blur-xl with semi-transparent backgrounds (bg-card/70, bg-card/80)
+- **Hover Effects**: Scale transforms (hover:scale-105), glow effects with colored shadows, gradient overlays on hover
+- **Animations**: Enhanced fadeIn/scaleIn animations with staggered delays, animated progress bars with blur glow
+- **Visual Hierarchy**: Gradient text headings, larger typography, improved spacing (max-w-7xl container)
+- **Micro-interactions**: Icon scale on hover, rotating icons, pulsing status indicators, smooth color transitions
+- **Responsive Design**: Improved mobile layout with grid adjustments (grid-cols-2 lg:grid-cols-4)
+- **Empty State**: Enhanced no-career-selected state with glassmorphism card and animated background
+- **Stats Cards**: Glassmorphic stat cards with individual hover states and gradient overlays
+
 ### Fixed - Transcription Model Consistency
 **Voice-realtime transcription model alignment:**
 - Fixed inconsistency between API route (`whisper-1`) and session hook (`gpt-4o-mini-transcribe`)
