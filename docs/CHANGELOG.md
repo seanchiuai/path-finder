@@ -1,5 +1,28 @@
 # Changelog
 
+## [Dashboard UI] - 2025-11-23
+
+### Added - Career Compass Dashboard with Gamification
+**Created dashboard page displaying up to 3 selected careers with XP tracking:**
+
+**Components:**
+- `components/career/XPProgressBar.tsx`: Animated XP progress bar with level badges, shows current XP / required XP for next level
+- `components/GameifiedCareerDashboard.tsx`: Complete rewrite to use Career Compass data model (replaced old single-career dashboard)
+
+**Dashboard Features:**
+- Dashboard stats cards: Total XP earned, longest streak, tasks completed this week, active careers count
+- Career cards display: career name, industry, fit score, completion %, XP progress bar, streak, weekly tasks
+- "View Details" button navigates to `/career/[careerId]` for individual career detail pages
+- Empty state with call-to-action when no careers selected
+- "Add More Career Paths" card when user has < 3 careers selected
+- Uses Convex queries: `getActiveSelectedCareers`, `getAllProgress`, `getDashboardSummary`
+
+**UI Patterns:**
+- Glassmorphism cards with backdrop blur and gradient overlays
+- Animated hover effects and scale transitions
+- Responsive grid layouts (2 cols on mobile, 3-4 on desktop)
+- Color-coded stat cards with icons (yellow=XP, orange=streak, green=tasks, purple=careers)
+
 ## [Backend Integration] - 2025-11-23
 
 ### Added - Career Compass Pipeline Integration
