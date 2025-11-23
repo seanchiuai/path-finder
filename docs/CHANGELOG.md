@@ -13,6 +13,12 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Added - Abandon Recommendations Feature
+**Allow users to clear recommendations and restart:**
+- `convex/careerRecommendations.ts:131-164`: `abandonRecommendations` mutation deletes all user recommendations and clears AI analysis/transcript from profile
+- `app/recommendations/page.tsx:267-276`: Destructive abandon button in header with trash icon, confirmation dialog, loading state
+- Redirects to voice-realtime onboarding after abandoning for fresh start
+
 ### Enhanced - Dashboard Visual Design
 **Magical animated dashboard with glassmorphism:**
 - `components/AnimatedBackground.tsx`: Canvas-based animated background with floating gradient orbs and particle system using theme colors
