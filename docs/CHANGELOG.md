@@ -26,8 +26,8 @@
 **Agent Configuration:**
 - `lib/agentConfigs/lisaCareerAdvisor/`: LISA agent with structured career discovery framework
   - `prompts.ts`: Discovery methodology (6 topics: Goals, Interests, Values, Hard Skills, Soft Skills, Work Style)
-  - `tools.ts`: `generateCareerRecommendations` tool (placeholder for multi-agent integration)
-  - `index.ts`: Agent definition (voice: "sage")
+  - `tools.ts`: `generateCareerRecommendations` tool (removed - conversations saved directly to Convex)
+  - `index.ts`: Agent definition (voice: "sage", tools: [])
 - `lib/agentConfigs/guardrails.ts`: Content moderation using OpenAI Responses API
 
 **Utilities:**
