@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { IconHeart, IconArrowLeft, IconBriefcase } from "@tabler/icons-react"
+import { IconHeart, IconArrowLeft, IconBriefcase, IconLoader } from "@tabler/icons-react"
 
 export default function SavedCareersPage() {
   const { user } = useUser()
@@ -55,11 +55,11 @@ export default function SavedCareersPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-lg">{career.title}</CardTitle>
+                    <CardTitle className="text-lg">{career.careerName}</CardTitle>
                     <CardDescription>{career.industry}</CardDescription>
                   </div>
                   <Badge variant="secondary">
-                    {Math.round(career.matchScore * 100)}% Match
+                    {Math.round(career.matchScore)}% Match
                   </Badge>
                 </div>
               </CardHeader>
@@ -67,15 +67,25 @@ export default function SavedCareersPage() {
                 <p className="text-sm text-muted-foreground mb-4">
                   {career.matchExplanation}
                 </p>
+
+                {/* Generating Status */}
+                {career.isGenerating && (
+                  <div className="flex items-center gap-2 text-sm text-blue-600 mb-3 bg-blue-50 p-2 rounded">
+                    <IconLoader className="w-4 h-4 animate-spin" />
+                    <span>Generating action plan...</span>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                   <IconBriefcase className="w-4 h-4" />
                   <span>Saved {new Date(career._creationTime).toLocaleDateString()}</span>
                 </div>
-                <Button 
+                <Button
                   className="w-full"
                   onClick={() => handleViewCareer(career.careerId)}
+                  disabled={career.isGenerating}
                 >
-                  View Details
+                  {career.isGenerating ? "Generating..." : "View Details"}
                 </Button>
               </CardContent>
             </Card>

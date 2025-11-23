@@ -53,6 +53,7 @@ export default function RecommendationsPage() {
   const upsertCareerCompassPlan = useMutation(api.actionPlans.upsertCareerCompassPlan)
   const initializeProgress = useMutation(api.careerProgress.initializeProgress)
   const ensureDefaultFolder = useMutation(api.careerFolders.ensureDefaultFolder)
+  const updateGeneratingStatus = useMutation(api.savedCareers.updateGeneratingStatus)
 
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
@@ -169,13 +170,15 @@ export default function RecommendationsPage() {
           }],
         })
 
-        // Save to folder system (savedCareers table)
+        // Save to folder system (savedCareers table) with generating state
         await createSavedCareer({
           folderId: folder._id,
+          careerId: selectedCareer.careerId,
           careerName: careerData?.careerName || '',
           industry: careerData?.industry || '',
           matchScore: careerData?.fitScore || 0,
           matchExplanation: `Selected for Career Compass action plan`,
+          isGenerating: true,
         })
 
         // Save action plan
@@ -191,10 +194,16 @@ export default function RecommendationsPage() {
         await initializeProgress({
           careerId: selectedCareer.careerId,
         })
+
+        // Mark generation as complete
+        await updateGeneratingStatus({
+          careerId: selectedCareer.careerId,
+          isGenerating: false,
+        })
       }
 
       toast.success(`Generated action plans for ${result.selectedCareers.length} career${result.selectedCareers.length > 1 ? 's' : ''}!`)
-      router.push('/dashboard')
+      router.push('/saved-careers')
     } catch (error) {
       console.error('Failed to generate action plans:', error)
       toast.error('Failed to generate action plans. Please try again.')

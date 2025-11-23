@@ -93,10 +93,12 @@ export const listUserSavedCareers = query({
 export const createSavedCareer = mutation({
   args: {
     folderId: v.id("folders"),
+    careerId: v.string(),
     careerName: v.string(),
     industry: v.string(),
     matchScore: v.number(),
     matchExplanation: v.string(),
+    isGenerating: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const userId = await getUserId(ctx);
@@ -111,10 +113,12 @@ export const createSavedCareer = mutation({
     const savedCareerId = await ctx.db.insert("savedCareers", {
       userId,
       folderId: args.folderId,
+      careerId: args.careerId,
       careerName: args.careerName,
       industry: args.industry,
       matchScore: args.matchScore,
       matchExplanation: args.matchExplanation,
+      isGenerating: args.isGenerating,
       createdAt: Date.now(),
     });
 
@@ -133,6 +137,7 @@ export const updateSavedCareer = mutation({
     matchScore: v.optional(v.number()),
     matchExplanation: v.optional(v.string()),
     folderId: v.optional(v.id("folders")),
+    isGenerating: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const userId = await getUserId(ctx);
@@ -153,6 +158,7 @@ export const updateSavedCareer = mutation({
     const updates: Partial<Doc<"savedCareers">> = {};
     if (args.careerName !== undefined) updates.careerName = args.careerName;
     if (args.industry !== undefined) updates.industry = args.industry;
+    if (args.isGenerating !== undefined) updates.isGenerating = args.isGenerating;
     if (args.matchScore !== undefined) updates.matchScore = args.matchScore;
     if (args.matchExplanation !== undefined) updates.matchExplanation = args.matchExplanation;
     if (args.folderId !== undefined) updates.folderId = args.folderId;
@@ -177,6 +183,34 @@ export const deleteSavedCareer = mutation({
     }
 
     await ctx.db.delete(args.savedCareerId);
+  },
+});
+
+/**
+ * Update isGenerating status by careerId
+ */
+export const updateGeneratingStatus = mutation({
+  args: {
+    careerId: v.string(),
+    isGenerating: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getUserId(ctx);
+
+    // Find the saved career by careerId
+    const savedCareer = await ctx.db
+      .query("savedCareers")
+      .withIndex("by_careerId", (q) => q.eq("userId", userId).eq("careerId", args.careerId))
+      .first();
+
+    if (!savedCareer) {
+      // Career not found, silently skip (might not have been saved yet)
+      return;
+    }
+
+    await ctx.db.patch(savedCareer._id, {
+      isGenerating: args.isGenerating,
+    });
   },
 });
 

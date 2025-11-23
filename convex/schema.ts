@@ -93,14 +93,17 @@ export default defineSchema({
   savedCareers: defineTable({
     userId: v.string(),
     folderId: v.id("folders"), // Link to organized folders
+    careerId: v.string(), // Unique identifier for the career (e.g., "Product Manager-Technology")
     careerName: v.string(), // e.g., "Product Manager"
     industry: v.string(),
-    matchScore: v.number(), // Percentage match to user profile
+    matchScore: v.number(), // Percentage match to user profile (0-100)
     matchExplanation: v.string(), // How the match was determined
+    isGenerating: v.optional(v.boolean()), // Whether action plan is still being generated
     embedding: v.optional(v.array(v.float64())), // Vector embedding for search
     createdAt: v.number(),
   })
     .index("by_user_folder", ["userId", "folderId"])
+    .index("by_careerId", ["userId", "careerId"])
     .searchIndex("by_embedding", {
       searchField: "embedding",
       filterFields: ["userId", "folderId"],
