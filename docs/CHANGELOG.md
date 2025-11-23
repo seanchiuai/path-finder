@@ -13,6 +13,9 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Changed
+- **Recommendations Page**: "Complete Onboarding" button now navigates to `/voice-realtime` instead of `/onboarding`
+
 ### Added - OpenAI Realtime API Integration
 
 **Route:**
