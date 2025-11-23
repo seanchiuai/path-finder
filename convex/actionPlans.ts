@@ -356,6 +356,8 @@ export const updateTaskStatus = mutation({
       task.taskId === args.taskId ? { ...task, status: args.newStatus } : task
     );
 
+    console.log(`[updateTaskStatus] Updated task ${args.taskId} to ${args.newStatus}`);
+
     // Update phases based on task completion
     const updatedPhases = actionPlan.phases.map((phase: any) => {
       const phaseTasks = updatedTasks.filter((t: any) => t.phase === phase.phaseId);
@@ -363,7 +365,10 @@ export const updateTaskStatus = mutation({
         const completed = phaseTasks.filter((t: any) => t.status === "completed").length;
         const completionRate = completed / phaseTasks.length;
 
+        console.log(`[updateTaskStatus] Phase ${phase.phaseId}: ${completed}/${phaseTasks.length} tasks completed (${Math.round(completionRate * 100)}%)`);
+
         if (completionRate >= 0.7) {
+          console.log(`[updateTaskStatus] Phase ${phase.phaseId} reached 70% completion - marking as completed`);
           return { ...phase, status: "completed" };
         } else if (completionRate > 0) {
           return { ...phase, status: "in-progress" };
@@ -376,6 +381,7 @@ export const updateTaskStatus = mutation({
     for (let i = 0; i < updatedPhases.length; i++) {
       if (updatedPhases[i].status === "completed" && i + 1 < updatedPhases.length) {
         if (updatedPhases[i + 1].status === "locked") {
+          console.log(`[updateTaskStatus] Unlocking Phase ${updatedPhases[i + 1].phaseId}`);
           updatedPhases[i + 1] = { ...updatedPhases[i + 1], status: "unlocked" };
         }
       }

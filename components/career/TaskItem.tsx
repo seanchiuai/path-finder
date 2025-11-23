@@ -2,7 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Briefcase, Users, Target, Zap } from "lucide-react";
+import { BookOpen, Briefcase, Users, Target, Zap, Loader2 } from "lucide-react";
 
 interface Task {
   taskId: string;
@@ -17,14 +17,17 @@ interface TaskItemProps {
   task: Task;
   onToggle: (taskId: string, newStatus: "completed" | "not_started") => void;
   disabled?: boolean;
+  optimisticStatus?: string;
 }
 
 /**
  * TaskItem component for Career Compass gamification
  * Shows task with track icon, XP badge, and completion checkbox
  */
-export default function TaskItem({ task, onToggle, disabled = false }: TaskItemProps) {
-  const isCompleted = task.status === "completed";
+export default function TaskItem({ task, onToggle, disabled = false, optimisticStatus }: TaskItemProps) {
+  // Use optimistic status if available, otherwise use task status
+  const currentStatus = optimisticStatus || task.status;
+  const isCompleted = currentStatus === "completed";
 
   const getTrackIcon = () => {
     switch (task.track) {
@@ -79,20 +82,25 @@ export default function TaskItem({ task, onToggle, disabled = false }: TaskItemP
           ? "bg-green-500/5 border-green-500/20"
           : "bg-card/50 border-border/50 hover:border-primary/30 hover:bg-card/80"
         }
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        ${disabled ? "opacity-75" : ""}
       `}
     >
-      {/* Checkbox */}
-      <Checkbox
-        checked={isCompleted}
-        onCheckedChange={(checked) => {
-          if (!disabled) {
-            onToggle(task.taskId, checked ? "completed" : "not_started");
-          }
-        }}
-        disabled={disabled}
-        className="mt-1"
-      />
+      {/* Checkbox with Loading Spinner */}
+      <div className="relative flex items-center">
+        <Checkbox
+          checked={isCompleted}
+          onCheckedChange={(checked) => {
+            if (!disabled) {
+              onToggle(task.taskId, checked ? "completed" : "not_started");
+            }
+          }}
+          disabled={disabled}
+          className="mt-1"
+        />
+        {disabled && (
+          <Loader2 className="absolute -right-6 top-1 w-4 h-4 text-primary animate-spin" />
+        )}
+      </div>
 
       {/* Task Content */}
       <div className="flex-1 space-y-2">

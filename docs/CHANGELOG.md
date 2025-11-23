@@ -1,5 +1,41 @@
 # Changelog
 
+## [Task Completion & Phase Unlocking Fix] - 2025-11-23
+
+### Fixed - Task Checkboxes and Phase Unlocking Now Working
+**Implemented optimistic updates and loading states for task completion:**
+
+**Problem:** Task checkboxes appeared stuck and phases wouldn't unlock despite backend mutations working correctly. Issue was data synchronization and lack of visual feedback.
+
+**Frontend Changes (app/career/[id]/page.tsx):**
+- Added optimistic task state management (`optimisticTasks`)
+- Changed from global `isUpdating` to per-task `updatingTaskId` tracking
+- Immediate UI updates before mutations complete
+- Automatic revert on error, cleanup after success
+- Added 100ms delay for Convex data propagation
+- Console logging for debugging mutation flow
+
+**TaskItem Component (components/career/TaskItem.tsx):**
+- Added `optimisticStatus` prop for immediate visual feedback
+- Added `Loader2` spinning icon next to checkbox when updating
+- Uses optimistic status when available, falls back to database status
+- Visual feedback during async operations
+
+**Backend Changes (convex/actionPlans.ts):**
+- Added console logging to track phase completion calculations
+- Logs show: task updates, completion percentages, phase status changes
+- Tracks when phases reach 70% completion and unlock next phase
+- Debug output for troubleshooting phase unlocking logic
+
+**UX Improvements:**
+- Checkbox updates instantly when clicked
+- Spinning loader shows task is processing
+- Toast notifications on success/failure
+- Error handling reverts optimistic update on failure
+- Phase cards update in real-time when unlocked
+
+**Flow:** User clicks checkbox → Immediate visual update → Spinner shows → Mutations execute → Phase calculates completion → 70% reached → Next phase unlocks → Data syncs → Spinner disappears → Success toast
+
 ## [Enhanced Career Dashboard] - 2025-11-23
 
 ### Added - Career-Compass Resource Display Features

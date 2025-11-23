@@ -52,7 +52,8 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
 
   // State
   const [activePhaseId, setActivePhaseId] = useState(1);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+  const [optimisticTasks, setOptimisticTasks] = useState<Record<string, string>>({});
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -106,15 +107,20 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
 
   // Handle task toggle
   const handleTaskToggle = async (taskId: string, newStatus: "completed" | "not_started") => {
-    if (isUpdating) return;
+    if (updatingTaskId) return;
 
     const task = actionPlan.tasks?.find(t => t.taskId === taskId);
     if (!task) return;
 
-    setIsUpdating(true);
+    // Optimistic update - immediately update UI
+    setOptimisticTasks(prev => ({ ...prev, [taskId]: newStatus }));
+    setUpdatingTaskId(taskId);
+
+    console.log(`[Task Toggle] Starting update for task ${taskId} to ${newStatus}`);
 
     try {
       // Update task status in action plan
+      console.log('[Task Toggle] Calling updateTaskMutation...');
       await updateTaskMutation({
         careerId,
         taskId,
@@ -128,6 +134,7 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
       ).length || 0;
 
       // Update progress
+      console.log('[Task Toggle] Calling updateProgressMutation...');
       await updateProgressMutation({
         careerId,
         taskId,
@@ -138,16 +145,35 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
         completedTasks
       });
 
+      console.log('[Task Toggle] Mutations completed successfully');
+
+      // Small delay to allow Convex to propagate changes
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       toast.success(
         newStatus === "completed"
           ? `Task completed! +${task.xp} XP earned`
           : "Task marked as incomplete"
       );
     } catch (error) {
-      console.error("Error updating task:", error);
-      toast.error("Failed to update task");
+      console.error("[Task Toggle] Error updating task:", error);
+      // Revert optimistic update on error
+      setOptimisticTasks(prev => {
+        const newState = { ...prev };
+        delete newState[taskId];
+        return newState;
+      });
+      toast.error("Failed to update task. Please try again.");
     } finally {
-      setIsUpdating(false);
+      setUpdatingTaskId(null);
+      // Clear optimistic state after a delay to let real data come through
+      setTimeout(() => {
+        setOptimisticTasks(prev => {
+          const newState = { ...prev };
+          delete newState[taskId];
+          return newState;
+        });
+      }, 500);
     }
   };
 
@@ -279,7 +305,8 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                       key={task.taskId}
                       task={task}
                       onToggle={handleTaskToggle}
-                      disabled={isUpdating}
+                      disabled={updatingTaskId === task.taskId}
+                      optimisticStatus={optimisticTasks[task.taskId]}
                     />
                   ))
                 ) : (
@@ -352,7 +379,8 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                       key={task.taskId}
                       task={task}
                       onToggle={handleTaskToggle}
-                      disabled={isUpdating}
+                      disabled={updatingTaskId === task.taskId}
+                      optimisticStatus={optimisticTasks[task.taskId]}
                     />
                   ))
                 ) : (
@@ -441,7 +469,8 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                       key={task.taskId}
                       task={task}
                       onToggle={handleTaskToggle}
-                      disabled={isUpdating}
+                      disabled={updatingTaskId === task.taskId}
+                      optimisticStatus={optimisticTasks[task.taskId]}
                     />
                   ))
                 ) : (
@@ -517,7 +546,8 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                       key={task.taskId}
                       task={task}
                       onToggle={handleTaskToggle}
-                      disabled={isUpdating}
+                      disabled={updatingTaskId === task.taskId}
+                      optimisticStatus={optimisticTasks[task.taskId]}
                     />
                   ))
                 ) : (
