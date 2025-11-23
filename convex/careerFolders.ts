@@ -156,8 +156,8 @@ export const listFoldersInProject = query({
   },
 });
 
-// Get default folder for a project (creates one if none exists)
-export const getDefaultFolder = mutation({
+// Get default folder for a project (query - doesn't create)
+export const getDefaultFolder = query({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -171,7 +171,32 @@ export const getDefaultFolder = mutation({
       throw new Error("Project not found or unauthorized");
     }
 
-    // Get the first folder in the project, or create a default one
+    // Get the first folder in the project
+    const folders = await ctx.db
+      .query("folders")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+
+    return folders.length > 0 ? folders[0] : null;
+  },
+});
+
+// Ensure default folder exists for a project (creates one if none exists)
+export const ensureDefaultFolder = mutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Verify project access
+    const project = await ctx.db.get(args.projectId);
+    if (!project || project.userId !== identity.subject) {
+      throw new Error("Project not found or unauthorized");
+    }
+
+    // Get the first folder in the project
     const folders = await ctx.db
       .query("folders")
       .withIndex("by_project", (q) => q.eq("projectId", args.projectId))

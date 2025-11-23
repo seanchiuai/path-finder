@@ -52,10 +52,12 @@ export default function RecommendationsPage() {
   const selectCareersMutation = useMutation(api.selectedCareers.selectCareers)
   const upsertCareerCompassPlan = useMutation(api.actionPlans.upsertCareerCompassPlan)
   const initializeProgress = useMutation(api.careerProgress.initializeProgress)
+  const ensureDefaultFolder = useMutation(api.careerFolders.ensureDefaultFolder)
 
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
   const [removingCareer, setRemovingCareer] = useState<string | null>(null)
+  const [savingCareer, setSavingCareer] = useState<string | null>(null)
 
   // Handlers
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
@@ -189,23 +191,66 @@ export default function RecommendationsPage() {
     router.push(`/career/${encodeURIComponent(careerName)}?industry=${encodeURIComponent(industry)}`)
   }
 
-  const handleSaveCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }) => {
+  const handleSaveCareer = async (career: {
+    // Convex recommendations format
+    career?: string;
+    role?: string;
+    industry?: string;
+    matchScore?: number;
+    matchExplanation?: string;
+    // AI analysis recommendations format (legacy)
+    match_score?: number;
+    reasoning?: string;
+    salary_range?: string;
+  }) => {
+    // Create unique key for this career
+    const careerKey = `${career.career || career.role}-${career.industry || career.salary_range}`
+    setSavingCareer(careerKey)
+
     try {
-      if (!defaultFolder) {
-        toast.error("Default folder not ready. Try again in a moment.")
+      // Ensure we have a project
+      if (!defaultProject) {
+        toast.error("Setting up your workspace. Please try again in a moment.")
         return
       }
+
+      // Ensure folder exists (creates if needed)
+      const folder = await ensureDefaultFolder({ projectId: defaultProject._id })
+
+      if (!folder) {
+        toast.error("Failed to create career folder. Please try again.")
+        return
+      }
+
+      // Normalize career data from either format
+      const careerName = career.career || career.role || "Unknown Career"
+      const industry = career.industry || career.salary_range || "Unknown"
+
+      // Handle match score: Convex format (0-100) or legacy format (0.0-1.0)
+      let matchScore = 0
+      if (career.matchScore !== undefined) {
+        matchScore = Math.round(career.matchScore)
+      } else if (career.match_score !== undefined) {
+        matchScore = Math.round(career.match_score * 100) // Convert 0.0-1.0 to 0-100
+      }
+
+      const matchExplanation = career.matchExplanation || career.reasoning || "Saved from recommendations"
+
       await createSavedCareer({
-        folderId: defaultFolder._id as any,
-        careerName: career.career || career.role || "",
-        industry: career.industry,
-        matchScore: Math.round((career.matchScore ?? career.match_score ?? 0) || 0),
-        matchExplanation: career.matchExplanation || career.reasoning || "Saved from recommendations",
+        folderId: folder._id,
+        careerName,
+        industry,
+        matchScore,
+        matchExplanation,
       })
-      toast.success("Saved career!")
+
+      toast.success(`Saved ${careerName}!`)
     } catch (error) {
       console.error("Failed to save career:", error)
-      toast.error("Failed to save career")
+      const errorMessage = error instanceof Error ? error.message : "Failed to save career"
+      toast.error(errorMessage)
+    } finally {
+      setSavingCareer(null)
     }
   }
 
@@ -579,8 +624,13 @@ export default function RecommendationsPage() {
                   <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                     View Details
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
-                    Save
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSaveCareer(rec)}
+                    disabled={savingCareer === careerKey}
+                  >
+                    {savingCareer === careerKey ? "Saving..." : "Save"}
                   </Button>
                 </div>
               </CardContent>
@@ -649,8 +699,13 @@ export default function RecommendationsPage() {
                   <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                     View Details
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
-                    Save
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleSaveCareer(rec)}
+                    disabled={savingCareer === careerKey}
+                  >
+                    {savingCareer === careerKey ? "Saving..." : "Save"}
                   </Button>
                 </div>
               </CardContent>
