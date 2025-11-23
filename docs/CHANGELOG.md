@@ -1,5 +1,32 @@
 # Changelog
 
+## [E2E Testing Ready] - 2025-11-23
+
+### Fixed - TypeScript Errors in Convex Functions
+**Resolved schema compatibility issues and started all services:**
+
+**actionPlans.ts Fixes:**
+- `createActionPlan:78-87`: Transform legacy phase format (title, duration, steps) to Career Compass format (phaseId, name, order, status)
+- Added careerId extraction from recommendation.selectedRecommendation or first recommendation
+- Added empty tasks array for legacy action plans
+- Maintains backwards compatibility with old API while supporting new schema
+
+**careerRecommendations.ts Fixes:**
+- `abandonRecommendations:151-160`: Changed from patching userProfiles to careerProfiles
+- Fixed: aiAnalysisResults and rawOnboardingTranscript fields are in careerProfiles table, not userProfiles
+
+**All Services Running:**
+- ✅ **Next.js**: http://localhost:3000 (Turbopack, middleware compiled)
+- ✅ **Convex**: Dev server connected, functions ready
+- ✅ **Python Backend**: http://localhost:8001 (Career Compass pipeline with Gemini 2.0-flash)
+
+**Ready for Testing:**
+- Voice onboarding → Career Compass analysis → Recommendations
+- Career selection (max 3) → Action plan generation
+- Dashboard with XP/levels/streaks
+- Career detail with phases, tasks, YouTube videos
+- Task completion with XP updates
+
 ## [Backend Testing] - 2025-11-23
 
 ### Fixed - Python Backend Import Errors
