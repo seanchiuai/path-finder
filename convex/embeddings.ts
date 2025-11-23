@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import OpenAI from "openai";
 import { api } from "./_generated/api";
 import { encoding_for_model } from "tiktoken";
+import type { Doc } from "./_generated/dataModel";
 
 const MAX_TOKENS = 8192; // Token limit for text-embedding-3-small
 
@@ -196,7 +197,7 @@ export const batchGenerateSavedCareerEmbeddings = action({
     );
 
     // Limit number of saved careers to process
-    const savedCareers = allSavedCareers.slice(0, limit);
+    const savedCareers: Doc<"savedCareers">[] = allSavedCareers.slice(0, limit);
 
     let successCount = 0;
     const failedIds: string[] = [];
@@ -206,11 +207,11 @@ export const batchGenerateSavedCareerEmbeddings = action({
     const BATCH_DELAY = 1000; // 1s delay between batches
 
     for (let i = 0; i < savedCareers.length; i += BATCH_SIZE) {
-      const batch = savedCareers.slice(i, i + BATCH_SIZE);
+      const batch: Doc<"savedCareers">[] = savedCareers.slice(i, i + BATCH_SIZE);
 
       // Process batch concurrently
       const results = await Promise.allSettled(
-        batch.map((savedCareer) =>
+        batch.map((savedCareer: Doc<"savedCareers">) =>
           ctx.runAction(api.embeddings.generateSavedCareerEmbedding, {
             savedCareerId: savedCareer._id,
           })
@@ -218,7 +219,7 @@ export const batchGenerateSavedCareerEmbeddings = action({
       );
 
       // Track success/failure
-      results.forEach((result, index) => {
+      results.forEach((result: PromiseSettledResult<unknown>, index: number) => {
         const savedCareerId = batch[index]._id;
         if (result.status === "fulfilled") {
           successCount++;

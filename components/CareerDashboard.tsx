@@ -10,12 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Briefcase, 
-  TrendingUp, 
-  BookOpen, 
-  Users, 
   Sparkles,
   ArrowRight,
-  Plus,
   Target,
   Brain,
   Heart
@@ -25,6 +21,7 @@ export default function CareerDashboard() {
   const { user } = useUser();
   const router = useRouter();
   const careerProfile = useQuery(api.careerProfiles.getCareerProfile);
+  const careerRecommendations = useQuery(api.careerRecommendations.getCareerRecommendations);
   const savedCareers = useQuery(api.savedCareers.getSavedCareers);
   const [mounted, setMounted] = useState(false);
 
@@ -33,7 +30,7 @@ export default function CareerDashboard() {
   }, []);
 
   const hasProfile = careerProfile && Object.keys(careerProfile).length > 1; // More than just userId
-  const hasRecommendations = careerProfile?.recommendations && careerProfile.recommendations.length > 0;
+  const hasRecommendations = careerRecommendations?.recommendations && careerRecommendations.recommendations.length > 0;
   const savedCareersCount = savedCareers?.length || 0;
 
   if (!mounted || !user) {
@@ -82,7 +79,7 @@ export default function CareerDashboard() {
           Welcome back, {user.firstName || user.fullName}!
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Your personalized career discovery journey continues. Let's find your perfect career match.
+          Your personalized career discovery journey continues. Let&apos;s find your perfect career match.
         </p>
       </div>
 
@@ -173,11 +170,11 @@ export default function CareerDashboard() {
           <CardContent>
             {hasRecommendations ? (
               <div className="space-y-3">
-                {careerProfile.recommendations.slice(0, 3).map((rec, index) => (
+                {careerRecommendations.recommendations.slice(0, 3).map((rec, index) => (
                   <div 
                     key={index}
                     className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/career/${encodeURIComponent(rec.role)}`)}
+                    onClick={() => router.push(`/career/${encodeURIComponent(rec.role)}?industry=${encodeURIComponent(rec.industry)}`)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
@@ -223,21 +220,21 @@ export default function CareerDashboard() {
               Saved Careers
             </CardTitle>
             <CardDescription>
-              Careers you've bookmarked for later
+              Careers you&apos;ve bookmarked for later
             </CardDescription>
           </CardHeader>
           <CardContent>
             {savedCareersCount > 0 ? (
               <div className="space-y-3">
-                {savedCareers?.slice(0, 3).map((career, index) => (
+                {savedCareers?.slice(0, 3).map((career) => (
                   <div 
                     key={career._id}
                     className="p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/career/${encodeURIComponent(career.careerId)}`)}
+                    onClick={() => router.push(`/career/${encodeURIComponent(career.careerName)}?industry=${encodeURIComponent(career.industry)}`)}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">{career.title}</h4>
+                        <h4 className="font-medium">{career.careerName}</h4>
                         <p className="text-sm text-muted-foreground">{career.industry}</p>
                       </div>
                       <Badge variant="outline">
@@ -275,7 +272,7 @@ export default function CareerDashboard() {
       {/* Stats Overview */}
       <div className="grid sm:grid-cols-4 gap-4">
         <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "200ms" }}>
-          <div className="text-3xl font-bold text-primary">{hasRecommendations ? careerProfile.recommendations.length : 0}</div>
+          <div className="text-3xl font-bold text-primary">{hasRecommendations ? careerRecommendations.recommendations.length : 0}</div>
           <div className="text-sm text-muted-foreground">AI Recommendations</div>
         </Card>
         <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "250ms" }}>

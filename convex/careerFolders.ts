@@ -156,8 +156,8 @@ export const listFoldersInProject = query({
   },
 });
 
-// Get default folder for a project
-export const getDefaultFolder = query({
+// Get default folder for a project (creates one if none exists)
+export const getDefaultFolder = mutation({
   args: { projectId: v.id("projects") },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();

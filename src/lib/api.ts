@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_PYTHON_API_URL || 'http://localhost:8001';
 
 export interface OnboardingData {
   userId: string;
@@ -71,6 +71,18 @@ export interface CareerInsights {
   career_path: string[];
 }
 
+export interface OnboardingStartResponse {
+  success: boolean;
+  orchestratorSessionId: string;
+  careerProfile: any;
+  recommendedRoles: CareerRecommendation[];
+}
+
+export interface NextLLMResponse {
+  success: boolean;
+  next: string;
+}
+
 class CareerAPI {
   private async fetchWithErrorHandling(url: string, options?: RequestInit) {
     try {
@@ -116,6 +128,32 @@ class CareerAPI {
     return this.fetchWithErrorHandling('/api/test-agents', {
       method: 'POST',
     });
+  }
+
+  async transcribeAudio(audioBase64: string): Promise<{ success: boolean; text: string; language?: string; confidence?: number }>{
+    return this.fetchWithErrorHandling('/api/voice/stt', {
+      method: 'POST',
+      body: JSON.stringify({ audio_data: audioBase64, language: 'en' }),
+    });
+  }
+
+  async onboardingStart(transcript: string, resume_text?: string): Promise<OnboardingStartResponse> {
+    return this.fetchWithErrorHandling('/api/onboarding/start', {
+      method: 'POST',
+      body: JSON.stringify({ transcript, resume_text }),
+    });
+  }
+
+  async onboardingLLMResponse(history: Array<{ role: 'user' | 'assistant'; content: string }>): Promise<NextLLMResponse> {
+    return this.fetchWithErrorHandling('/api/onboarding/llm-response', {
+      method: 'POST',
+      body: JSON.stringify({ history }),
+    });
+  }
+
+  async getCareerDetails(role: string, industry?: string): Promise<{ success: boolean; role: string; industry: string; salaryDataPoints: any[]; resources: any[] }>{
+    const params = new URLSearchParams({ role, ...(industry ? { industry } : {}) });
+    return this.fetchWithErrorHandling(`/api/data/career-details?${params.toString()}`);
   }
 }
 

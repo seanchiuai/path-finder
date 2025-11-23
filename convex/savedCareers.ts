@@ -58,6 +58,21 @@ export const listSavedCareersInFolder = query({
 });
 
 /**
+ * Get all saved careers for the current user
+ */
+export const getSavedCareers = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getUserId(ctx);
+    
+    return await ctx.db
+      .query("savedCareers")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+  },
+});
+
+/**
  * List all saved careers for a user
  */
 export const listUserSavedCareers = query({

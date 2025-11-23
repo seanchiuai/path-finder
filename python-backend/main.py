@@ -1,9 +1,18 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Optional
 import asyncio
-from spoon_career_agents import CareerAnalysisOrchestrator, ActionPlanAgent
+import sys
+from pathlib import Path
+try:
+    from spoon_career_agents import CareerAnalysisOrchestrator, ActionPlanAgent  # type: ignore
+    SPOON_AVAILABLE = True
+except Exception:
+    # Ensure local agents can be imported from current directory
+    sys.path.append(str(Path(__file__).parent))
+    from career_agents import AgentOrchestrator as LocalAgentOrchestrator, ActionPlanAgent as LocalActionPlanAgent
+    SPOON_AVAILABLE = False
 import os
 from dotenv import load_dotenv
 import logging
@@ -26,8 +35,19 @@ app.add_middleware(
 )
 
 # Initialize agents
-orchestrator = CareerAnalysisOrchestrator()
-action_plan_agent = ActionPlanAgent()
+if SPOON_AVAILABLE:
+    try:
+        orchestrator = CareerAnalysisOrchestrator()
+        action_plan_agent = ActionPlanAgent()
+        logger.info("Using spoon_career_agents orchestrator")
+    except Exception:
+        orchestrator = LocalAgentOrchestrator()
+        action_plan_agent = LocalActionPlanAgent()
+        logger.info("Using local career_agents orchestrator (init fallback)")
+else:
+    orchestrator = LocalAgentOrchestrator()
+    action_plan_agent = LocalActionPlanAgent()
+    logger.info("Using local career_agents orchestrator (import fallback)")
 
 class OnboardingData(BaseModel):
     userId: str
@@ -52,20 +72,35 @@ async def analyze_onboarding(data: OnboardingData):
     """Analyze user onboarding data and generate career recommendations."""
     try:
         # Run the orchestrator to analyze user data
-        analysis_result = await orchestrator.analyze_career(f"""
-        Background: {data.background}
-        Skills: {data.skills}
-        Interests: {data.interests}
-        Goals: {data.goals}
-        Values: {data.values}
-        Personality: {data.personality or 'Not specified'}
-        """)
+        # Support both spoon_career_agents style and local AgentOrchestrator
+        if hasattr(orchestrator, "analyze_career"):
+            analysis_result = await orchestrator.analyze_career(f"""
+            Background: {data.background}
+            Skills: {data.skills}
+            Interests: {data.interests}
+            Goals: {data.goals}
+            Values: {data.values}
+            Personality: {data.personality or 'Not specified'}
+            """)
+            recommendations = analysis_result.get("recommendations", [])
+            summary = analysis_result
+        else:
+            combined = await orchestrator.run_full_analysis({
+                "background": data.background,
+                "skills": data.skills,
+                "interests": data.interests,
+                "goals": data.goals,
+                "values": data.values,
+                "personality": data.personality or ""
+            })
+            recommendations = combined.get("recommendations", [])
+            summary = combined.get("analysis_summary", {})
         
         return {
             "success": True,
             "userId": data.userId,
-            "analysis": analysis_result,
-            "recommendations": analysis_result.get("recommendations", []),
+            "analysis": summary,
+            "recommendations": recommendations,
             "timestamp": asyncio.get_event_loop().time()
         }
     except Exception as e:
@@ -101,6 +136,94 @@ async def generate_action_plan(request: CareerAnalysisRequest):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Action plan generation failed: {str(e)}")
+
+class OnboardingStartRequest(BaseModel):
+    transcript: str
+    resume_text: Optional[str] = None
+
+@app.post("/api/onboarding/start")
+async def onboarding_start(req: OnboardingStartRequest):
+    """Run full analysis and return structured profile and recommendations."""
+    try:
+        if hasattr(orchestrator, "run_full_analysis"):
+            combined = await orchestrator.run_full_analysis({
+                "background": req.transcript,
+                "skills": req.transcript,
+                "interests": req.transcript,
+                "goals": req.transcript,
+                "values": req.transcript,
+                "resume": req.resume_text or ""
+            })
+            career_profile = combined.get("analysis_summary", {})
+            recommendations = combined.get("recommendations", [])
+            session_id = combined.get("analysis_id")
+        else:
+            analysis_result = await orchestrator.analyze_career(req.transcript)
+            career_profile = analysis_result
+            recommendations = analysis_result.get("recommendations", [])
+            session_id = "session-" + str(hash(req.transcript))
+
+        return {
+            "success": True,
+            "orchestratorSessionId": session_id,
+            "careerProfile": career_profile,
+            "recommendedRoles": recommendations,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Onboarding start failed: {str(e)}")
+
+class OnboardingLLMRequest(BaseModel):
+    history: List[Dict[str, str]]  # [{role: "user"|"assistant", content: "..."}]
+
+@app.post("/api/onboarding/llm-response")
+async def onboarding_llm_response(req: OnboardingLLMRequest):
+    """Return the next onboarding question based on simple state machine."""
+    try:
+        questions = [
+            "Tell me about your background and experience.",
+            "What skills do you have and enjoy using?",
+            "What industries or domains interest you?",
+            "What are your near-term career goals?",
+            "What work values matter most to you?"
+        ]
+        # Count user turns to select next question
+        user_turns = [m for m in req.history if m.get("role") == "user"]
+        if len(user_turns) >= len(questions):
+            return {"success": True, "next": "Great! You're all set—press Finish & Analyze."}
+        idx = len(user_turns)
+        next_q = questions[idx]
+        return {"success": True, "next": next_q}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM response failed: {str(e)}")
+
+@app.get("/api/data/career-details")
+async def career_details(role: str, industry: Optional[str] = None):
+    """Return salary bell curve and learning/network resources for a role."""
+    try:
+        import json
+        from pathlib import Path
+        base = Path(__file__).parent / "data"
+        salary_path = base / "mock_salary_data.json"
+        resources_path = base / "mock_resources.json"
+        salary = json.loads(salary_path.read_text())
+        resources = json.loads(resources_path.read_text())
+
+        career_salary = salary["careers"].get(role)
+        career_resources = resources["careers"].get(role, {"resources": []})
+        if not career_salary:
+            raise HTTPException(status_code=404, detail="Role not found")
+
+        return {
+            "success": True,
+            "role": role,
+            "industry": industry or career_salary.get("industry"),
+            "salaryDataPoints": career_salary.get("salaryDataPoints", []),
+            "resources": career_resources.get("resources", [])
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get career details: {str(e)}")
 
 @app.get("/api/career-insights/{career_id}")
 async def get_career_insights(career_id: str):
@@ -217,12 +340,12 @@ async def list_voices():
     }
 
 @app.post("/api/voice/stt")
-async def speech_to_text(request: VoiceSTTRequest):
-    """Convert speech to text using OpenAI Whisper"""
+async def speech_to_text(req: Request):
+    """Convert speech to text using OpenAI Whisper (mock). Accepts audio_data or audio_base64."""
     try:
+        payload = await req.json()
+        language = payload.get("language", "en")
         # For now, return a mock transcription
-        # In production, integrate with OpenAI Whisper API
-        # Decode base64 audio and send to Whisper
         mock_transcriptions = [
             "I'm interested in transitioning from marketing to product management.",
             "I have five years of experience in software development and want to move into AI.",
@@ -230,14 +353,12 @@ async def speech_to_text(request: VoiceSTTRequest):
             "I'm a recent graduate looking to start a career in data science.",
             "I want to leverage my design skills to move into UX research."
         ]
-        
         import random
         transcription = random.choice(mock_transcriptions)
-        
         return {
             "success": True,
             "text": transcription,
-            "language": request.language,
+            "language": language,
             "confidence": 0.95
         }
     except Exception as e:

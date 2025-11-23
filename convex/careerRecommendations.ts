@@ -21,6 +21,26 @@ export const getCareerRecommendations = query({
 });
 
 /**
+ * Get the user's selected career recommendation
+ */
+export const getSelectedCareer = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const recommendation = await ctx.db
+      .query("careerRecommendations")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+      .first();
+
+    return recommendation?.selectedRecommendation || null;
+  },
+});
+
+/**
  * Create career recommendations
  */
 export const createCareerRecommendations = mutation({
@@ -62,7 +82,7 @@ export const createCareerRecommendations = mutation({
 });
 
 /**
- * Select a recommendation
+ * Select a recommendation (user chooses their career path)
  */
 export const selectRecommendation = mutation({
   args: {
@@ -81,6 +101,19 @@ export const selectRecommendation = mutation({
       throw new Error("Recommendation not found or unauthorized");
     }
 
+    // First, clear any existing selected recommendations for this user
+    const userRecommendations = await ctx.db
+      .query("careerRecommendations")
+      .withIndex("by_userId", (q) => q.eq("userId", identity.subject))
+      .collect();
+
+    await Promise.all(
+      userRecommendations.map(rec => 
+        ctx.db.patch(rec._id, { selectedRecommendation: undefined })
+      )
+    );
+
+    // Then set the new selected recommendation
     await ctx.db.patch(args.recommendationId, {
       selectedRecommendation: {
         industry: args.industry,

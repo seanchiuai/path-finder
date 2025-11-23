@@ -14,7 +14,7 @@ import { useState } from "react"
 export default function RecommendationsPage() {
   const { user } = useUser()
   const router = useRouter()
-  const userProfile = useQuery(api.userProfiles.getUserProfile, user?.id ? { userId: user.id } : "skip")
+  const userProfile = useQuery(api.userProfiles.getUserProfile)
   const recommendations = useQuery(api.careerRecommendations.getCareerRecommendations)
   
   // Get default project and folder for saving careers
@@ -28,46 +28,58 @@ export default function RecommendationsPage() {
   )
   
   // Mutations
+  const selectRecommendation = useMutation(api.careerRecommendations.selectRecommendation)
   const createSavedCareer = useMutation(api.savedCareers.createSavedCareer)
-  const [savingCareers, setSavingCareers] = useState<Set<string>>(new Set())
+  const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
 
   // Handlers
-  const handleSaveCareer = async (career: any) => {
-    if (!defaultFolder) {
-      toast.error("No default folder found. Please create a project first.")
-      return
-    }
-
+  const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
     const careerKey = `${career.career || career.role}-${career.industry}`
-    setSavingCareers(prev => new Set(prev).add(careerKey))
-
+    setSelectingCareer(careerKey)
+    
     try {
-      await createSavedCareer({
-        folderId: defaultFolder._id,
-        careerName: career.career || career.role,
+      await selectRecommendation({
+        recommendationId: recommendationId as Id<"careerRecommendations">,
         industry: career.industry,
-        matchScore: career.match_score ? Math.round(career.match_score * 100) : career.matchScore,
-        matchExplanation: career.reasoning || career.matchExplanation,
+        role: career.career || career.role,
       })
       
-      toast.success(`Saved ${career.career || career.role} to your careers!`)
+      toast.success(`Selected ${career.career || career.role} as your career path!`)
+      // Navigate to dashboard after selection
+      router.push('/dashboard')
     } catch (error) {
-      console.error("Failed to save career:", error)
-      toast.error("Failed to save career. Please try again.")
+      console.error("Failed to select career:", error)
+      toast.error("Failed to select career. Please try again.")
     } finally {
-      setSavingCareers(prev => {
-        const newSet = new Set(prev)
-        newSet.delete(careerKey)
-        return newSet
-      })
+      setSelectingCareer(null)
     }
   }
 
-  const handleViewDetails = (career: any) => {
+  const handleViewDetails = (career: { career?: string; role?: string; industry: string }) => {
     // Navigate to career detail page - we'll need to create this
     const careerName = career.career || career.role
     const industry = career.industry
     router.push(`/career/${encodeURIComponent(careerName)}?industry=${encodeURIComponent(industry)}`)
+  }
+
+  const handleSaveCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }) => {
+    try {
+      if (!defaultFolder) {
+        toast.error("Default folder not ready. Try again in a moment.")
+        return
+      }
+      await createSavedCareer({
+        folderId: defaultFolder._id as any,
+        careerName: career.career || career.role || "",
+        industry: career.industry,
+        matchScore: Math.round((career.matchScore ?? career.match_score ?? 0) || 0),
+        matchExplanation: career.matchExplanation || career.reasoning || "Saved from recommendations",
+      })
+      toast.success("Saved career!")
+    } catch (error) {
+      console.error("Failed to save career:", error)
+      toast.error("Failed to save career")
+    }
   }
 
   if (!user) {
@@ -162,7 +174,7 @@ export default function RecommendationsPage() {
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Display recommendations from AI analysis */}
-        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: any, index: number) => (
+        {userProfile?.aiAnalysisResults?.recommendations?.map((rec: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, index: number) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
@@ -189,15 +201,18 @@ export default function RecommendationsPage() {
               </div>
               <div className="flex gap-2">
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm"
-                  onClick={() => handleSaveCareer(rec)}
-                  disabled={savingCareers.has(`${rec.career}-${rec.salary_range}`)}
+                  onClick={() => handleSelectCareer(rec, recommendations?._id || 'ai-analysis')}
+                  disabled={selectingCareer === `${rec.career}-${rec.salary_range}`}
                 >
-                  {savingCareers.has(`${rec.career}-${rec.salary_range}`) ? "Saving..." : "Save Career"}
+                  {selectingCareer === `${rec.career}-${rec.salary_range}` ? "Choosing..." : "Choose This Career"}
                 </Button>
-                <Button size="sm" variant="default" onClick={() => handleViewDetails(rec)}>
+                <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                   View Details
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
+                  Save
                 </Button>
               </div>
             </CardContent>
@@ -222,15 +237,18 @@ export default function RecommendationsPage() {
               </p>
               <div className="flex gap-2">
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   size="sm"
-                  onClick={() => handleSaveCareer(rec)}
-                  disabled={savingCareers.has(`${rec.role}-${rec.industry}`)}
+                  onClick={() => handleSelectCareer(rec, recommendations!._id)}
+                  disabled={selectingCareer === `${rec.role}-${rec.industry}`}
                 >
-                  {savingCareers.has(`${rec.role}-${rec.industry}`) ? "Saving..." : "Save Career"}
+                  {selectingCareer === `${rec.role}-${rec.industry}` ? "Choosing..." : "Choose This Career"}
                 </Button>
-                <Button size="sm" variant="default" onClick={() => handleViewDetails(rec)}>
+                <Button size="sm" variant="outline" onClick={() => handleViewDetails(rec)}>
                   View Details
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleSaveCareer(rec)}>
+                  Save
                 </Button>
               </div>
             </CardContent>
