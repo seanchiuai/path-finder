@@ -56,6 +56,71 @@
 - CRITICAL error labeling for system design/database structure issues
 - Plan execution workflow with status tracking
 
+## [Unreleased] - 2025-11-22
+
+### Fixed - Python Backend Dependencies
+
+**Requirements Update:**
+- `requirements.txt`: Updated elevenlabs from 1.14.1 (nonexistent) to 2.24.0 (latest)
+- Successfully installed all dependencies in venv
+
+### Added - Direct Voice Chat Implementation
+
+**New Files:**
+- `app/voice-demo-direct/page.tsx`: Direct voice demo route
+- `components/features/voice-chat-direct.tsx`: Direct voice chat component (188 lines)
+- `PROJECT_STATE.md`: Project state documentation
+- `nextSteps.md`: Next steps documentation (250 lines)
+
+**Updates:**
+- `python-backend/main.py`: +30 lines for enhanced voice functionality
+- `components/features/voice-chat.tsx`: Minor update
+
+### Added - Python Backend Integration (Hybrid Architecture)
+
+**Python Microservice (FastAPI):**
+- `python-backend/main.py`: FastAPI server for ElevenLabs + Spoon OS integrations
+- `python-backend/requirements.txt`: Python dependencies (fastapi, elevenlabs, uvicorn)
+- `python-backend/README.md`: Setup and deployment guide
+
+**Convex Proxy Actions:**
+- `convex/voice.ts`: Text-to-speech, get voices, speech-to-text proxy actions
+- `convex/spoonos.ts`: Spoon OS processing + backend health check
+
+**Frontend Components:**
+- `components/features/voice-chat.tsx`: Voice chat UI with ElevenLabs integration
+- `app/voice-demo/page.tsx`: Demo page for testing voice features
+
+**API Endpoints:**
+- `/api/voice/tts`: Text-to-speech with ElevenLabs (base64 response)
+- `/api/voice/tts-stream`: Streaming TTS for lower latency
+- `/api/voice/voices`: Get available ElevenLabs voices
+- `/api/voice/stt`: Speech-to-text placeholder (Whisper integration ready)
+- `/api/spoonos/process`: Spoon OS processing endpoint
+- `/health`: Backend health check
+
+**Documentation:**
+- `docs/python-backend-integration.md`: Complete hybrid architecture guide
+- `.env.example`: Environment variable template with Python backend config
+
+**Environment Variables:**
+- Frontend: `NEXT_PUBLIC_PYTHON_API_URL` (Python backend URL)
+- Convex: `PYTHON_API_URL` (for server-side Python calls)
+- Python: `ELEVENLABS_API_KEY`, `SPOONOS_API_KEY`, `ALLOWED_ORIGINS`
+
+**Key Features:**
+- Hybrid architecture: Convex (database/realtime) + Python (ML/AI)
+- ElevenLabs voice generation with configurable settings
+- Backend health monitoring from frontend
+- CORS-enabled for secure cross-origin requests
+- Production-ready with deployment guides (Fly.io, Railway, AWS Lambda)
+
+**Architecture Benefits:**
+- Keep Convex strengths: realtime, type safety, vector search, auth
+- Use Python for: ElevenLabs, Spoon OS, heavy ML models
+- No frontend rewrite needed - proxy through Convex actions
+- Type-safe end-to-end with auto-generated Convex types
+
 ## [Unreleased] - 2025-11-17
 
 ### Added - Tech Stack Agents
