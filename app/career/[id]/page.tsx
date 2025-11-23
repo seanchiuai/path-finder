@@ -11,16 +11,14 @@ import { SalaryBellCurve } from "@/components/features/salary-bell-curve"
 import { useSearchParams } from "next/navigation"
 import { IconBriefcase, IconMapPin, IconCurrencyDollar, IconBook, IconUsers, IconTarget, IconArrowLeft } from "@tabler/icons-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import ReactMarkdown from "react-markdown"
 import { careerAPI } from "@/src/lib/api"
 
 interface CareerDetailPageProps {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }>
 }
 
 export default function CareerDetailPage({ params }: CareerDetailPageProps) {
@@ -29,8 +27,9 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
   const searchParams = useSearchParams()
   const industry = searchParams.get('industry')
   
-  const careerName = decodeURIComponent(params.id)
-  const userProfile = useQuery(api.userProfiles.getUserProfile, user?.id ? { userId: user.id } : "skip")
+  const unwrapped = use(params)
+  const careerName = decodeURIComponent(unwrapped.id)
+  const userProfile = useQuery(api.userProfiles.getUserProfile)
   
   // Simulator state
   const [simulatorActive, setSimulatorActive] = useState(false)
@@ -80,6 +79,7 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
 
   // Simulator functions
   const startSimulation = () => {
+    if (!careerData) return
     setSimulatorActive(true)
     setCurrentQuestionIndex(0)
     setSimulationResults([])
@@ -91,11 +91,12 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
   }
 
   const getSimulationQuestion = (index: number) => {
+    const roleLabel = careerData?.name || careerName
     const questions = [
-      `You're working as a ${careerData.name} and your team lead asks you to debug a critical production issue. The application is down and users can't access the service. What would be your first steps?`,
-      `As a ${careerData.name}, you're asked to implement a new feature that will impact the entire system architecture. How would you approach this challenge?`,
-      `You're presenting your work to stakeholders who aren't technical. How do you explain complex ${careerData.name} concepts to them?`,
-      `Your team is behind schedule on a critical project. As the ${careerData.name}, how do you handle the pressure and communicate with your team?`
+      `You're working as a ${roleLabel} and your team lead asks you to debug a critical production issue. The application is down and users can't access the service. What would be your first steps?`,
+      `As a ${roleLabel}, you're asked to implement a new feature that will impact the entire system architecture. How would you approach this challenge?`,
+      `You're presenting your work to stakeholders who aren't technical. How do you explain complex ${roleLabel} concepts to them?`,
+      `Your team is behind schedule on a critical project. As the ${roleLabel}, how do you handle the pressure and communicate with your team?`
     ]
     return questions[index] || questions[0]
   }
@@ -236,20 +237,22 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-6">
           {/* Salary Bell Curve */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <IconCurrencyDollar className="h-5 w-5" />
-                Salary Expectations
-              </CardTitle>
-              <CardDescription>
-                Salary distribution based on experience level in {careerData.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SalaryBellCurve data={careerData?.salaryData || []} />
-            </CardContent>
-          </Card>
+          {careerData && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconCurrencyDollar className="h-5 w-5" />
+                  Salary Expectations
+                </CardTitle>
+                <CardDescription>
+                  Salary distribution based on experience level in {careerData.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SalaryBellCurve data={careerData.salaryData || []} />
+              </CardContent>
+            </Card>
+          )}
 
           {/* Required Skills */}
           <Card>
@@ -291,7 +294,7 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                   <div>
                     <h4 className="font-semibold mb-2">Growth Areas</h4>
                     <div className="space-y-1">
-                      {careerData.requiredSkills.slice(0, 3).map((skill, index) => (
+                      {(userProfile?.aiAnalysisResults?.skills || []).slice(3, 6).map((skill, index) => (
                         <Badge key={index} variant="outline" className="mr-1">
                           {skill}
                         </Badge>
@@ -319,7 +322,7 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                   <div className="max-w-md mx-auto">
                     <h3 className="text-lg font-semibold mb-2">Test Your Skills</h3>
                     <p className="text-muted-foreground mb-4">
-                      Practice real-world scenarios you&apos;ll encounter as a {careerData.name}. 
+                      Practice real-world scenarios you'll encounter as a {careerData?.name || careerName}. 
                       Answer questions and get personalized feedback to improve your approach.
                     </p>
                   </div>
@@ -403,7 +406,7 @@ export default function CareerDetailPage({ params }: CareerDetailPageProps) {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-semibold mb-2">Mock Interviews</h4>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Practice common interview questions for {careerData.name} roles
+                    Practice common interview questions for {careerData?.name || careerName} roles
                   </p>
                   <Button size="sm" variant="outline">Practice Interview</Button>
                 </div>
