@@ -13,6 +13,15 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Added - Language Preference Specification
+**Voice-realtime language selection with ISO-639-1 codes:**
+- `components/realtime/LanguageSelector.tsx`: Dropdown with 21 supported languages (en, es, fr, de, it, pt, nl, pl, ru, zh, ja, ko, ar, hi, tr, vi, th, sv, da, no, fi)
+- Language preference persisted in localStorage (`voiceLanguagePreference`)
+- Language passed to OpenAI session creation for input audio transcription accuracy
+- Language config applied to realtime session for output language
+- UI integrated in voice-realtime header, disabled during active sessions
+- **Flow**: Select language → Connect → Language guides transcription & output
+
 ### Added - Voice-Realtime to Career Analysis Flow
 **Complete onboarding flow from voice session to career recommendations:**
 - `components/features/analysis-loading.tsx`: Animated loading UI with 6-stage fake progress (Processing → Skills → Personality → Passions → Values → Career Matching)
