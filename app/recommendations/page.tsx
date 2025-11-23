@@ -57,7 +57,6 @@ export default function RecommendationsPage() {
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
   const [removingCareer, setRemovingCareer] = useState<string | null>(null)
-  const [savingCareer, setSavingCareer] = useState<string | null>(null)
 
   // Handlers
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
@@ -146,17 +145,37 @@ export default function RecommendationsPage() {
 
       const result = await response.json()
 
+      // Ensure default folder exists for saving careers
+      if (!defaultProject) {
+        throw new Error("Default project not found")
+      }
+      const folder = await ensureDefaultFolder({ projectId: defaultProject._id })
+      if (!folder) {
+        throw new Error("Failed to create default folder")
+      }
+
       // Save to Convex
       for (const selectedCareer of result.selectedCareers) {
+        const careerData = selectedCareerData.find(c => c.careerId === selectedCareer.careerId)
+
         // Save selected career
         await selectCareersMutation({
           careerIds: [selectedCareer.careerId],
           careers: [{
             careerId: selectedCareer.careerId,
-            careerName: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.careerName || '',
-            industry: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.industry || '',
-            fitScore: selectedCareerData.find(c => c.careerId === selectedCareer.careerId)?.fitScore || 0,
+            careerName: careerData?.careerName || '',
+            industry: careerData?.industry || '',
+            fitScore: careerData?.fitScore || 0,
           }],
+        })
+
+        // Save to folder system (savedCareers table)
+        await createSavedCareer({
+          folderId: folder._id,
+          careerName: careerData?.careerName || '',
+          industry: careerData?.industry || '',
+          matchScore: careerData?.fitScore || 0,
+          matchExplanation: `Selected for Career Compass action plan`,
         })
 
         // Save action plan
@@ -189,69 +208,6 @@ export default function RecommendationsPage() {
     const careerName = career.career || career.role
     const industry = career.industry
     router.push(`/career/${encodeURIComponent(careerName)}?industry=${encodeURIComponent(industry)}`)
-  }
-
-  const handleSaveCareer = async (career: {
-    // Convex recommendations format
-    career?: string;
-    role?: string;
-    industry?: string;
-    matchScore?: number;
-    matchExplanation?: string;
-    // AI analysis recommendations format (legacy)
-    match_score?: number;
-    reasoning?: string;
-    salary_range?: string;
-  }) => {
-    // Create unique key for this career
-    const careerKey = `${career.career || career.role}-${career.industry || career.salary_range}`
-    setSavingCareer(careerKey)
-
-    try {
-      // Ensure we have a project
-      if (!defaultProject) {
-        toast.error("Setting up your workspace. Please try again in a moment.")
-        return
-      }
-
-      // Ensure folder exists (creates if needed)
-      const folder = await ensureDefaultFolder({ projectId: defaultProject._id })
-
-      if (!folder) {
-        toast.error("Failed to create career folder. Please try again.")
-        return
-      }
-
-      // Normalize career data from either format
-      const careerName = career.career || career.role || "Unknown Career"
-      const industry = career.industry || career.salary_range || "Unknown"
-
-      // Handle match score: Convex format (0-100) or legacy format (0.0-1.0)
-      let matchScore = 0
-      if (career.matchScore !== undefined) {
-        matchScore = Math.round(career.matchScore)
-      } else if (career.match_score !== undefined) {
-        matchScore = Math.round(career.match_score * 100) // Convert 0.0-1.0 to 0-100
-      }
-
-      const matchExplanation = career.matchExplanation || career.reasoning || "Saved from recommendations"
-
-      await createSavedCareer({
-        folderId: folder._id,
-        careerName,
-        industry,
-        matchScore,
-        matchExplanation,
-      })
-
-      toast.success(`Saved ${careerName}!`)
-    } catch (error) {
-      console.error("Failed to save career:", error)
-      const errorMessage = error instanceof Error ? error.message : "Failed to save career"
-      toast.error(errorMessage)
-    } finally {
-      setSavingCareer(null)
-    }
   }
 
   const handleAbandonRecommendations = async () => {
@@ -626,11 +582,10 @@ export default function RecommendationsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleSaveCareer(rec)}
-                    disabled={savingCareer === careerKey}
+                    variant={isSelected ? "default" : "outline"}
+                    onClick={() => handleToggleCareerSelection(careerId)}
                   >
-                    {savingCareer === careerKey ? "Saving..." : "Save"}
+                    {isSelected ? "Selected ✓" : "Select"}
                   </Button>
                 </div>
               </CardContent>
@@ -701,11 +656,10 @@ export default function RecommendationsPage() {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
-                    onClick={() => handleSaveCareer(rec)}
-                    disabled={savingCareer === careerKey}
+                    variant={isSelected ? "default" : "outline"}
+                    onClick={() => handleToggleCareerSelection(careerId)}
                   >
-                    {savingCareer === careerKey ? "Saving..." : "Save"}
+                    {isSelected ? "Selected ✓" : "Select"}
                   </Button>
                 </div>
               </CardContent>
