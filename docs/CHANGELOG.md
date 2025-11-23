@@ -2,6 +2,80 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Added - OpenAI Realtime API Integration
+
+**Route:**
+- `/voice-realtime`: Protected route for LISA Career Advisor voice conversations
+- Full WebRTC-based voice interaction with OpenAI Realtime API
+
+**Components & UI:**
+- `components/realtime/Transcript.tsx`: Real-time conversation transcript with copy/download
+- `components/realtime/Events.tsx`: Debug event logs (client/server)
+- `components/realtime/BottomToolbar.tsx`: Connection controls, PTT, audio settings, codec selector
+- `components/realtime/GuardrailChip.tsx`: Content moderation status display
+
+**Context & State Management:**
+- `contexts/realtime/TranscriptContext.tsx`: Conversation state + Convex persistence
+- `contexts/realtime/EventContext.tsx`: Event logging for debugging
+
+**Hooks:**
+- `hooks/realtime/useRealtimeSession.ts`: WebRTC session management, OpenAI SDK integration
+- `hooks/realtime/useHandleSessionHistory.ts`: Process conversation events, update transcript
+- `hooks/realtime/useAudioDownload.ts`: Record and download conversation audio (WebM → WAV)
+
+**Agent Configuration:**
+- `lib/agentConfigs/lisaCareerAdvisor/`: LISA agent with structured career discovery framework
+  - `prompts.ts`: Discovery methodology (6 topics: Goals, Interests, Values, Hard Skills, Soft Skills, Work Style)
+  - `tools.ts`: `generateCareerRecommendations` tool (placeholder for multi-agent integration)
+  - `index.ts`: Agent definition (voice: "sage")
+- `lib/agentConfigs/guardrails.ts`: Content moderation using OpenAI Responses API
+
+**Utilities:**
+- `lib/realtime/audioUtils.ts`: WAV encoding and WebM conversion
+- `lib/realtime/codecUtils.ts`: WebRTC codec preferences (Opus/PCMU/PCMA)
+
+**Types:**
+- `types/realtime.ts`: Complete type definitions for sessions, events, transcripts, guardrails
+
+**Convex Integration:**
+- `convex/realtimeConversations.ts`: Save/retrieve voice conversation transcripts
+- Schema: `realtimeConversations` table (userId, conversationId, agentName, fullTranscript, sessionDuration, messagesCount)
+- Conversations auto-saved on disconnect with formatted transcript string
+
+**API Routes:**
+- `app/api/realtime/session/route.ts`: Create OpenAI ephemeral session tokens
+- `app/api/realtime/responses/route.ts`: Proxy for OpenAI Responses API (guardrails)
+
+**Dependencies Added:**
+- `@openai/agents@^0.0.5`: OpenAI Agents SDK for Realtime API
+- `@radix-ui/react-icons@^1.3.2`: Icons for UI components
+- `react-markdown@^9.0.1`: Markdown rendering in transcript
+- `uuid@^11.0.5`: Unique conversation IDs
+- `@types/uuid@^10.0.0`: TypeScript types for UUID
+
+**Assets:**
+- `public/arrow.svg`: Send button icon
+- `public/openai-logomark.svg`: OpenAI branding
+
+**Features:**
+- Real-time bidirectional voice conversation with LISA Career Advisor
+- Push-to-talk mode toggle
+- Audio playback controls
+- Codec selection (Opus 48kHz, PCMU/PCMA 8kHz for phone quality testing)
+- Event log debugging panel
+- Audio recording with WAV export
+- Content moderation guardrails
+- Conversation persistence to Convex database
+- Clerk authentication required
+
+**Technical Details:**
+- WebRTC for low-latency voice streaming
+- OpenAI Realtime API (`gpt-4o-realtime-preview-2025-06-03`)
+- Client-side conversation tracking with server-side storage
+- Automatic session management and cleanup
+
+## [Unreleased] - 2025-01-22
+
 ### Project Transition - PathFinder (Career OS)
 
 **Project Overview:**

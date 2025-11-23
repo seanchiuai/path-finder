@@ -14,6 +14,14 @@
 ├── bookmarks/
 │   ├── layout.tsx       # Bookmarks layout with folder/project sidebar
 │   └── page.tsx         # 🚧 Incomplete bookmark UI (placeholder only)
+├── voice-realtime/
+│   ├── layout.tsx       # Protected layout with Clerk auth
+│   ├── page.tsx         # Entry point with context providers
+│   └── App.tsx          # Main LISA voice conversation app
+├── voice-demo/
+│   └── page.tsx         # ElevenLabs voice demo (Python backend)
+├── voice-demo-direct/
+│   └── page.tsx         # Direct voice demo variant
 ├── search-demo/
 │   └── page.tsx         # Vector search demo (semantic bookmarks)
 ├── server/
