@@ -13,8 +13,19 @@
 
 ## [Unreleased] - 2025-01-22
 
+### Added - Voice-Realtime to Career Analysis Flow
+**Complete onboarding flow from voice session to career recommendations:**
+- `components/features/analysis-loading.tsx`: Animated loading UI with 6-stage fake progress (Processing → Skills → Personality → Passions → Values → Career Matching)
+- Voice session disconnect automatically saves transcript to sessionStorage and redirects to `/recommendations?analyzing=true`
+- Recommendations page triggers Python backend multi-agent analysis on mount when analyzing parameter present
+- Analysis results saved to Convex (careerProfiles, careerRecommendations tables)
+- Error handling with immediate retry button for failed analyses
+- Transcript cleared from sessionStorage after successful analysis
+- **Flow**: Voice session → Disconnect → Save transcript → Redirect → Show loading → Run agents → Display recommendations
+
 ### Changed
 - **Recommendations Page**: "Complete Onboarding" button now navigates to `/voice-realtime` instead of `/onboarding`
+- **Voice Realtime Disconnect**: Now stores transcript in sessionStorage and redirects to recommendations page for analysis
 
 ### Added - OpenAI Realtime API Integration
 
