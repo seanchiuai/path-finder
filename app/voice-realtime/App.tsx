@@ -29,6 +29,7 @@ const companyName = "PathFinder Career OS";
 
 import useAudioDownload from "@/hooks/realtime/useAudioDownload";
 import { useHandleSessionHistory } from "@/hooks/realtime/useHandleSessionHistory";
+import LanguageSelector from "@/components/realtime/LanguageSelector";
 
 function App() {
   const searchParams = useSearchParams()!;
@@ -36,6 +37,13 @@ function App() {
 
   // Codec selector
   const urlCodec = searchParams.get("codec") || "opus";
+
+  // Language preference state
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'en';
+    const stored = localStorage.getItem('voiceLanguagePreference');
+    return stored || 'en';
+  });
 
   const {
     addTranscriptMessage,
@@ -140,8 +148,8 @@ function App() {
   }, [isPTTActive]);
 
   const fetchEphemeralKey = async (): Promise<string | null> => {
-    logClientEvent({ url: "/api/realtime/session" }, "fetch_session_token_request");
-    const tokenResponse = await fetch("/api/realtime/session");
+    logClientEvent({ url: "/api/realtime/session", language: selectedLanguage }, "fetch_session_token_request");
+    const tokenResponse = await fetch(`/api/realtime/session?language=${selectedLanguage}`);
     const data = await tokenResponse.json();
     logServerEvent(data, "fetch_session_token_response");
 
@@ -180,6 +188,7 @@ function App() {
         initialAgents: reorderedAgents,
         audioElement: sdkAudioElement,
         outputGuardrails: [guardrail],
+        language: selectedLanguage,
         extraContext: {
           addTranscriptBreadcrumb,
         },
@@ -337,6 +346,20 @@ function App() {
   }, [isAudioPlaybackEnabled]);
 
   useEffect(() => {
+    localStorage.setItem("voiceLanguagePreference", selectedLanguage);
+  }, [selectedLanguage]);
+
+  const handleLanguageChange = (languageCode: string) => {
+    if (sessionStatus === "CONNECTED") {
+      // If connected, disconnect first and user will need to reconnect
+      // This ensures the new language setting is applied from the start
+      alert("Please disconnect and reconnect to apply the new language setting.");
+      return;
+    }
+    setSelectedLanguage(languageCode);
+  };
+
+  useEffect(() => {
     if (audioElementRef.current) {
       if (isAudioPlaybackEnabled) {
         audioElementRef.current.muted = false;
@@ -404,6 +427,11 @@ function App() {
             PathFinder <span className="text-gray-500">Voice Realtime</span>
           </div>
         </div>
+        <LanguageSelector
+          selectedLanguage={selectedLanguage}
+          onLanguageChange={handleLanguageChange}
+          disabled={sessionStatus === "CONNECTED" || sessionStatus === "CONNECTING"}
+        />
       </div>
 
       <div className="flex flex-1 gap-2 px-2 overflow-hidden relative">
