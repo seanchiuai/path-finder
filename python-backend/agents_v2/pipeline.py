@@ -94,7 +94,7 @@ class CareerAnalysisPipeline:
 
             # Step 2: Use orchestrator to recommend careers based on profile
             logger.info("Running career orchestrator...")
-            recommendations_result = await self.orchestrator_agent.recommend(career_profile)
+            recommendations_result = await self.orchestrator_agent.recommend(career_profile, transcript)
 
             logger.info(f"Pipeline complete: {len(recommendations_result.get('recommendations', []))} careers recommended")
 

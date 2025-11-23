@@ -20,12 +20,71 @@ class CareerOrchestratorAgent:
     def __init__(self, llm: ChatBot):
         self.llm = llm
 
-    async def recommend(self, profile: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_scores(self, recommendations: list) -> list:
+        """
+        Validate and normalize fit scores to ensure realistic distribution.
+
+        Target distribution:
+        - 10-12 careers: 85-95 (top ~50%)
+        - 6-8 careers: 70-84 (middle ~30%)
+        - 4-5 careers: 60-69 (lower ~20%)
+        """
+        if not recommendations:
+            return recommendations
+
+        # Sort by current fit score (descending)
+        recommendations.sort(key=lambda x: x.get("fitScore", 0), reverse=True)
+
+        # Check if scores are too clustered (all above 85)
+        scores = [r.get("fitScore", 0) for r in recommendations]
+        high_scores = sum(1 for s in scores if s >= 85)
+        mid_scores = sum(1 for s in scores if 70 <= s < 85)
+        low_scores = sum(1 for s in scores if 60 <= s < 70)
+
+        total = len(recommendations)
+
+        # If distribution is already good, return as-is
+        if (high_scores <= total * 0.6 and
+            mid_scores >= total * 0.2 and
+            low_scores >= total * 0.15):
+            logger.info(f"Score distribution is healthy: {high_scores} high, {mid_scores} mid, {low_scores} low")
+            return recommendations
+
+        # Otherwise, redistribute scores
+        logger.info(f"Normalizing scores. Original distribution: {high_scores} high, {mid_scores} mid, {low_scores} low")
+
+        # Target counts based on total recommendations
+        target_high = int(total * 0.5)  # Top 50%
+        target_mid = int(total * 0.3)   # Middle 30%
+        target_low = total - target_high - target_mid  # Remaining ~20%
+
+        for i, rec in enumerate(recommendations):
+            if i < target_high:
+                # Top tier: 85-95
+                # Spread evenly within range based on rank
+                new_score = 95 - (i * (10 / max(target_high - 1, 1)))
+                rec["fitScore"] = max(85, int(new_score))
+            elif i < target_high + target_mid:
+                # Middle tier: 70-84
+                rank_in_tier = i - target_high
+                new_score = 84 - (rank_in_tier * (14 / max(target_mid - 1, 1)))
+                rec["fitScore"] = max(70, int(new_score))
+            else:
+                # Lower tier: 60-69
+                rank_in_tier = i - target_high - target_mid
+                new_score = 69 - (rank_in_tier * (9 / max(target_low - 1, 1)))
+                rec["fitScore"] = max(60, int(new_score))
+
+        logger.info(f"Normalized score distribution: top={target_high}, mid={target_mid}, low={target_low}")
+        return recommendations
+
+    async def recommend(self, profile: Dict[str, Any], transcript: str = "") -> Dict[str, Any]:
         """
         Recommend careers based on the complete profile using dynamic LLM generation.
 
         Args:
             profile: Dict containing skills, personality, passions, goals, values
+            transcript: Original conversation transcript for context
 
         Returns:
             Dict with 'recommendations' array of 20+ career recommendations
@@ -37,17 +96,35 @@ class CareerOrchestratorAgent:
         values_summary = ", ".join([v.get("name", "") for v in profile.get("values", [])[:8]])
         goals_summary = str(profile.get("goals", {}))
 
+        # Truncate transcript if too long (keep first and last parts for context)
+        max_transcript_length = 4000
+        transcript_context = transcript if len(transcript) <= max_transcript_length else (
+            transcript[:2000] + "\n\n[... conversation continues ...]\n\n" + transcript[-2000:]
+        )
+
         prompt = f"""
 You are an expert career advisor with deep knowledge of hundreds of career paths across all industries.
 
-User Profile:
+ORIGINAL CONVERSATION TRANSCRIPT:
+{transcript_context}
+
+EXTRACTED PROFILE SUMMARY:
 - Skills: {skills_summary}
 - Personality Traits: {personality_summary}
 - Passions & Interests: {passions_summary}
 - Career Goals: {goals_summary}
 - Core Values: {values_summary}
 
-Based on this profile, recommend the TOP 20-25 REAL CAREER PATHS that would be the best fit. Think broadly across:
+Your task: Recommend the TOP 20-25 REAL CAREER PATHS based on what the user ACTUALLY discussed in the conversation above.
+
+CRITICAL - READ THE CONVERSATION CAREFULLY:
+- Pay attention to specific constraints they mentioned (remote work, time availability, location, etc.)
+- Notice what they expressed enthusiasm vs. hesitation about
+- Consider their current situation and transition preferences
+- Look for careers they explicitly mentioned interest in OR ruled out
+- The "whyGoodFit" MUST reference specific things they said in the conversation
+
+Think broadly across these industries:
 - Technology (software engineering, data science, cybersecurity, AI/ML, cloud architecture, DevOps, etc.)
 - Creative & Design (UX/UI design, product design, content creation, digital marketing, brand strategy)
 - Business & Management (product management, project management, business analysis, consulting, operations)
@@ -58,17 +135,22 @@ Based on this profile, recommend the TOP 20-25 REAL CAREER PATHS that would be t
 - Sales & Growth (technical sales, growth marketing, partnerships, business development)
 - Other relevant industries and emerging fields
 
-For each career, calculate a fit score (0-100) based on:
+SCORE DISTRIBUTION REQUIREMENTS (MANDATORY):
+You MUST spread scores across a realistic range. Do NOT make everything 85-95%.
+
+Required distribution for your 20-25 careers:
+- 10-12 careers with scores 85-95 (excellent fits, clear alignment)
+- 6-8 careers with scores 70-84 (good fits, some gaps or adjacencies)
+- 4-5 careers with scores 60-69 (interesting options, more exploration needed)
+
+For each career, calculate fit score (0-100) based on:
 1. Skill overlap and transferability (35% weight)
 2. Personality alignment (25% weight)
 3. Values match (20% weight)
 4. Passion relevance (15% weight)
 5. Career goals alignment (5% weight)
 
-Return a JSON object with 20-25 careers ranked by fit score. Include:
-- Some that are obvious/direct fits (high scores 85-100)
-- Some adjacent/lateral moves (scores 75-84)
-- Some creative/unexpected but relevant options (scores 65-74)
+Return JSON with 20-25 careers sorted by fit score (highest first):
 
 {{
   "recommendations": [
@@ -81,7 +163,7 @@ Return a JSON object with 20-25 careers ranked by fit score. Include:
       "medianSalary": "$XX,000 - $YY,000 (based on current US market)",
       "growthOutlook": "X% growth rate and job market outlook",
       "estimatedTime": "X-Y months to transition based on current skills",
-      "whyGoodFit": "2-3 sentences explaining why this specific career matches THIS user's unique combination of skills, personality, passions, and goals"
+      "whyGoodFit": "2-3 sentences explaining why this career matches what they ACTUALLY SAID in the conversation. Quote or reference specific things they mentioned."
     }},
     ...
   ]
@@ -89,12 +171,13 @@ Return a JSON object with 20-25 careers ranked by fit score. Include:
 
 CRITICAL REQUIREMENTS:
 - Return EXACTLY 20-25 careers (not less!)
-- Make them REAL, specific career paths (not vague or generic)
-- Ensure fit scores accurately reflect the actual match quality
-- Provide realistic salary ranges based on 2024-2025 market data
-- Estimated transition time should be realistic (consider current skills)
-- Each "whyGoodFit" must be personalized to THIS user's specific profile
-- Return ONLY valid JSON, no markdown, no additional text or explanations
+- Follow the score distribution requirements (don't make everything 85+!)
+- Make careers REAL and specific (not vague or generic)
+- Base recommendations on the ACTUAL CONVERSATION, not just the summary
+- Each "whyGoodFit" must reference specific conversation details
+- Provide realistic 2024-2025 salary ranges
+- Estimated transition time should be realistic
+- Return ONLY valid JSON, no markdown, no additional text
 """
 
         try:
@@ -122,6 +205,9 @@ CRITICAL REQUIREMENTS:
             # Validate we have enough recommendations
             if len(recommendations) < 15:
                 logger.warning(f"Only {len(recommendations)} recommendations generated, expected 20+")
+
+            # Validate and normalize score distribution
+            recommendations = self._normalize_scores(recommendations)
 
             return {"recommendations": recommendations}
 
