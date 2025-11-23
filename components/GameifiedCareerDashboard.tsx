@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import AnimatedBackground from "@/components/AnimatedBackground";
 import {
   Target,
   Trophy,
@@ -19,7 +20,9 @@ import {
   Award,
   CheckCircle,
   Clock,
-  LucideIcon
+  LucideIcon,
+  Sparkles,
+  Zap
 } from "lucide-react";
 
 interface CareerMilestone {
@@ -52,23 +55,39 @@ export default function GameifiedCareerDashboard() {
 
   if (!selectedCareer || !selectedCareer.role) {
     return (
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        <div className="text-center space-y-4">
-          <Trophy className="w-16 h-16 mx-auto text-muted-foreground" />
-          <h1 className="text-3xl font-bold">Choose Your Career Path</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            You haven't selected a career yet. Let's find the perfect match for you!
-          </p>
-          <Button
-            size="lg"
-            onClick={() => router.push("/recommendations")}
-            className="gap-2"
-          >
-            <Target className="w-4 h-4" />
-            Explore Career Recommendations
-          </Button>
+      <>
+        <AnimatedBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center p-6">
+          <Card className="max-w-2xl bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-2xl p-8 md:p-12 text-center space-y-6 animate-scale-in">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl" />
+
+            <div className="relative space-y-6">
+              <div className="relative mx-auto w-fit">
+                <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-3xl animate-pulse" />
+                <Trophy className="relative w-20 h-20 mx-auto text-yellow-500" />
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                  Choose Your Career Path
+                </h1>
+                <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto">
+                  You haven&apos;t selected a career yet. Let&apos;s find the perfect match for you!
+                </p>
+              </div>
+
+              <Button
+                size="lg"
+                onClick={() => router.push("/recommendations")}
+                className="gap-2 group hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-primary/30"
+              >
+                <Target className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                Explore Career Recommendations
+              </Button>
+            </div>
+          </Card>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -124,213 +143,308 @@ export default function GameifiedCareerDashboard() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
-      <div className="text-center space-y-4 animate-fade-in">
-        <div className="flex items-center justify-center gap-3">
-          <Trophy className="w-8 h-8 text-yellow-500" />
-          <h1 className="text-4xl font-bold tracking-tight">
-            Your Career Journey: {careerRole}
-          </h1>
+    <>
+      <AnimatedBackground />
+      <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 lg:p-8 space-y-6 md:space-y-8">
+        {/* Hero Section with Gradient */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/10 via-accent/5 to-transparent backdrop-blur-sm border border-primary/20 p-8 md:p-12 text-center space-y-6 animate-fade-in">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 animate-pulse" style={{ animationDuration: "3s" }} />
+
+          <div className="relative flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-yellow-500/20 rounded-full blur-2xl animate-pulse" />
+              <Trophy className="relative w-12 h-12 md:w-16 md:h-16 text-yellow-500 drop-shadow-lg" />
+            </div>
+
+            <div className="space-y-2">
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-tight bg-gradient-to-r from-foreground via-primary to-accent bg-clip-text text-transparent">
+                Your Career Journey
+              </h1>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <Badge variant="secondary" className="text-sm md:text-base px-4 py-1.5 bg-primary/10 border-primary/30 backdrop-blur-sm">
+                  <Sparkles className="w-4 h-4 mr-1" />
+                  {careerRole}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <p className="relative text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
+            You&apos;re on your way to becoming a <span className="font-semibold text-primary">{careerRole}</span> in <span className="font-semibold text-accent">{careerIndustry}</span>! Complete these milestones to advance your career.
+          </p>
         </div>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          You're on your way to becoming a {careerRole} in {careerIndustry}! Complete these milestones to advance your career.
-        </p>
-      </div>
 
-      <Card className="animate-scale-in">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="w-5 h-5" />
-                {careerRole} Career Path
-              </CardTitle>
-              <CardDescription>
-                {careerIndustry} • {Math.round(matchScore)}% Match
-              </CardDescription>
+        {/* Career Progress Card with Glassmorphism */}
+        <Card className="relative overflow-hidden bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-2xl animate-scale-in hover:shadow-primary/20 transition-all duration-500 hover:scale-[1.02]">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
+
+          <CardHeader className="relative">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-2">
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <Target className="w-6 h-6 text-primary" />
+                  </div>
+                  {careerRole} Career Path
+                </CardTitle>
+                <CardDescription className="text-base flex items-center gap-2 flex-wrap">
+                  <span>{careerIndustry}</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 font-semibold text-primary">
+                    <Zap className="w-4 h-4" />
+                    {Math.round(matchScore)}% Match
+                  </span>
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-base md:text-lg px-4 py-2 bg-accent/10 border-accent/40 backdrop-blur-sm w-fit">
+                Level 1 • Beginner
+              </Badge>
             </div>
-            <Badge variant="outline" className="text-lg px-3 py-1">
-              Level 1 • Beginner
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Overall Progress</span>
-              <span className="text-sm text-muted-foreground">{Math.round(overallProgress)}%</span>
+          </CardHeader>
+
+          <CardContent className="relative space-y-6">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-base font-semibold">Overall Progress</span>
+                <span className="text-lg font-bold text-primary">{Math.round(overallProgress)}%</span>
+              </div>
+              <div className="relative">
+                <Progress value={overallProgress} className="h-4" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-accent/20 rounded-full blur-sm" style={{ width: `${overallProgress}%` }} />
+              </div>
             </div>
-            <Progress value={overallProgress} className="h-3" />
+          </CardContent>
+        </Card>
+
+        {/* Career Milestones Section */}
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-yellow-500/10 rounded-xl">
+              <Award className="w-7 h-7 text-yellow-500" />
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold">Career Milestones</h2>
           </div>
-        </CardContent>
-      </Card>
 
-      <div className="grid gap-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Award className="w-6 h-6" />
-          Career Milestones
-        </h2>
+          <div className="grid gap-4 md:gap-6">
+            {careerProgress.map((milestone, index) => {
+              const Icon = milestone.icon;
+              const isCompleted = milestone.status === "completed";
+              const isInProgress = milestone.status === "in-progress";
 
-        {careerProgress.map((milestone, index) => {
-          const Icon = milestone.icon;
-          const isCompleted = milestone.status === "completed";
-          const isInProgress = milestone.status === "in-progress";
+              return (
+                <Card
+                  key={milestone.id}
+                  className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-primary/40 transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl animate-scale-in"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  {/* Gradient Overlay */}
+                  <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                    isCompleted
+                      ? 'bg-gradient-to-br from-green-500/5 to-transparent'
+                      : isInProgress
+                        ? 'bg-gradient-to-br from-primary/5 to-accent/5'
+                        : 'bg-gradient-to-br from-muted/5 to-transparent'
+                  }`} />
 
-          return (
-            <Card
-              key={milestone.id}
-              className="animate-scale-in hover:shadow-lg transition-all duration-300"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${
-                      isCompleted ? 'bg-green-100' : isInProgress ? 'bg-blue-100' : 'bg-gray-100'
-                    }`}>
-                      <Icon className={`w-5 h-5 ${
-                        isCompleted ? 'text-green-600' : isInProgress ? 'text-blue-600' : 'text-gray-400'
-                      }`} />
+                  <CardHeader className="relative pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className={`relative p-3 rounded-2xl transition-all duration-300 group-hover:scale-110 ${
+                          isCompleted
+                            ? 'bg-green-500/10 group-hover:bg-green-500/20'
+                            : isInProgress
+                              ? 'bg-primary/10 group-hover:bg-primary/20'
+                              : 'bg-muted/50'
+                        }`}>
+                          {isCompleted && <div className="absolute inset-0 bg-green-500/20 rounded-2xl blur-lg" />}
+                          {isInProgress && <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-lg" />}
+                          <Icon className={`relative w-6 h-6 ${
+                            isCompleted
+                              ? 'text-green-600'
+                              : isInProgress
+                                ? 'text-primary'
+                                : 'text-muted-foreground'
+                          }`} />
+                        </div>
+                        <div className="space-y-1">
+                          <CardTitle className="text-lg md:text-xl">{milestone.title}</CardTitle>
+                          <CardDescription className="text-sm md:text-base">{milestone.description}</CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 sm:flex-col sm:items-end">
+                        {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
+                        {isInProgress && <Clock className="w-5 h-5 text-primary animate-pulse" />}
+                        <Badge
+                          variant={isCompleted ? "secondary" : "outline"}
+                          className={`${
+                            isCompleted
+                              ? 'bg-green-500/10 border-green-500/30 text-green-700 dark:text-green-400'
+                              : isInProgress
+                                ? 'bg-primary/10 border-primary/30'
+                                : ''
+                          }`}
+                        >
+                          {isCompleted ? "Completed" : isInProgress ? "In Progress" : "Not Started"}
+                        </Badge>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle className="text-lg">{milestone.title}</CardTitle>
-                      <CardDescription>{milestone.description}</CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isCompleted && <CheckCircle className="w-5 h-5 text-green-500" />}
-                    {isInProgress && <Clock className="w-5 h-5 text-blue-500" />}
-                    <Badge variant={isCompleted ? "secondary" : "outline"}>
-                      {isCompleted ? "Completed" : isInProgress ? "In Progress" : "Not Started"}
-                    </Badge>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span>Progress</span>
-                    <span className="font-medium">{milestone.progress}%</span>
-                  </div>
-                  <Progress value={milestone.progress} className="h-2" />
+                  </CardHeader>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      variant={isInProgress ? "default" : "outline"}
-                      onClick={() => handleNavigateToCareer()}
-                    >
-                      {isInProgress ? "Continue" : isCompleted ? "Review" : "Start"}
-                    </Button>
-                    {milestone.title.includes("LinkedIn") && (
+                  <CardContent className="relative space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Progress</span>
+                        <span className="text-sm font-bold text-primary">{milestone.progress}%</span>
+                      </div>
+                      <div className="relative">
+                        <Progress value={milestone.progress} className="h-2.5" />
+                        <div
+                          className="absolute top-0 left-0 h-2.5 bg-gradient-to-r from-primary/30 to-accent/30 rounded-full blur-sm transition-all duration-500"
+                          style={{ width: `${milestone.progress}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
                       <Button
                         size="sm"
-                        variant="outline"
-                        onClick={() => window.open('https://linkedin.com', '_blank')}
+                        variant={isInProgress ? "default" : "outline"}
+                        onClick={() => handleNavigateToCareer()}
+                        className="hover:scale-105 transition-transform duration-200"
                       >
-                        Open LinkedIn
+                        {isInProgress ? "Continue" : isCompleted ? "Review" : "Start"}
                       </Button>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+                      {milestone.title.includes("LinkedIn") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open('https://linkedin.com', '_blank')}
+                          className="hover:scale-105 transition-transform duration-200"
+                        >
+                          Open LinkedIn
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action Cards */}
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-blue-500/40 transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardHeader className="relative">
+              <div className="p-3 bg-blue-500/10 rounded-2xl w-fit mb-2 group-hover:scale-110 transition-transform duration-300">
+                <BookOpen className="w-6 h-6 text-blue-500" />
+              </div>
+              <CardTitle className="text-xl">Learning Resources</CardTitle>
+              <CardDescription className="text-base">
+                Courses and materials for {careerRole}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative">
+              <Button
+                variant="outline"
+                className="w-full hover:bg-blue-500/10 hover:border-blue-500/40 transition-all duration-300"
+                onClick={() => handleNavigateToCareer("learn")}
+              >
+                Browse Materials
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-purple-500/40 transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in" style={{ animationDelay: "100ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardHeader className="relative">
+              <div className="p-3 bg-purple-500/10 rounded-2xl w-fit mb-2 group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-6 h-6 text-purple-500" />
+              </div>
+              <CardTitle className="text-xl">Network Building</CardTitle>
+              <CardDescription className="text-base">
+                Connect with professionals
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative">
+              <Button
+                variant="outline"
+                className="w-full hover:bg-purple-500/10 hover:border-purple-500/40 transition-all duration-300"
+                onClick={() => handleNavigateToCareer("network")}
+              >
+                Find Events
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-green-500/40 transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in sm:col-span-2 lg:col-span-1" style={{ animationDelay: "200ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <CardHeader className="relative">
+              <div className="p-3 bg-green-500/10 rounded-2xl w-fit mb-2 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-6 h-6 text-green-500" />
+              </div>
+              <CardTitle className="text-xl">Career Simulator</CardTitle>
+              <CardDescription className="text-base">
+                Try real-world scenarios
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="relative">
+              <Button
+                variant="outline"
+                className="w-full hover:bg-green-500/10 hover:border-green-500/40 transition-all duration-300"
+                onClick={() => handleNavigateToCareer("experiment")}
+              >
+                Start Simulation
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-yellow-500/40 p-6 text-center transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in" style={{ animationDelay: "200ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative space-y-2">
+              <div className="text-4xl md:text-5xl font-bold text-yellow-500 group-hover:scale-110 transition-transform duration-300">
+                {careerProgress.filter(t => t.status === "completed").length}
+              </div>
+              <div className="text-xs md:text-sm font-medium text-muted-foreground">Milestones<br />Completed</div>
+            </div>
+          </Card>
+
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-blue-500/40 p-6 text-center transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in" style={{ animationDelay: "250ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative space-y-2">
+              <div className="text-4xl md:text-5xl font-bold text-blue-500 group-hover:scale-110 transition-transform duration-300">
+                {Math.round(overallProgress)}%
+              </div>
+              <div className="text-xs md:text-sm font-medium text-muted-foreground">Overall<br />Progress</div>
+            </div>
+          </Card>
+
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-green-500/40 p-6 text-center transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in" style={{ animationDelay: "300ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative space-y-2">
+              <div className="text-4xl md:text-5xl font-bold text-green-500 group-hover:scale-110 transition-transform duration-300">
+                {skillsCount}
+              </div>
+              <div className="text-xs md:text-sm font-medium text-muted-foreground">Skills<br />Identified</div>
+            </div>
+          </Card>
+
+          <Card className="group relative overflow-hidden bg-card/70 backdrop-blur-xl border-2 hover:border-purple-500/40 p-6 text-center transition-all duration-500 hover:scale-105 hover:shadow-2xl animate-scale-in" style={{ animationDelay: "350ms" }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="relative space-y-2">
+              <div className="text-4xl md:text-5xl font-bold text-purple-500 group-hover:scale-110 transition-transform duration-300">
+                1
+              </div>
+              <div className="text-xs md:text-sm font-medium text-muted-foreground">Career Path<br />Selected</div>
+            </div>
+          </Card>
+        </div>
       </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="animate-scale-in">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Learning Resources
-            </CardTitle>
-            <CardDescription>
-              Courses and materials for {careerRole}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleNavigateToCareer("learn")}
-            >
-              Browse Learning Materials
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="animate-scale-in" style={{ animationDelay: "100ms" }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Network Building
-            </CardTitle>
-            <CardDescription>
-              Connect with professionals
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleNavigateToCareer("network")}
-            >
-              Find Networking Events
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="animate-scale-in" style={{ animationDelay: "200ms" }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Career Simulator
-            </CardTitle>
-            <CardDescription>
-              Try real-world scenarios
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => handleNavigateToCareer("experiment")}
-            >
-              Start Simulation
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid sm:grid-cols-4 gap-4">
-        <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "200ms" }}>
-          <div className="text-3xl font-bold text-yellow-500">
-            {careerProgress.filter(t => t.status === "completed").length}
-          </div>
-          <div className="text-sm text-muted-foreground">Milestones Completed</div>
-        </Card>
-        <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "250ms" }}>
-          <div className="text-3xl font-bold text-blue-500">
-            {Math.round(overallProgress)}
-          </div>
-          <div className="text-sm text-muted-foreground">Overall Progress</div>
-        </Card>
-        <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "300ms" }}>
-          <div className="text-3xl font-bold text-green-500">
-            {skillsCount}
-          </div>
-          <div className="text-sm text-muted-foreground">Skills Identified</div>
-        </Card>
-        <Card className="p-4 text-center animate-scale-in" style={{ animationDelay: "350ms" }}>
-          <div className="text-3xl font-bold text-purple-500">
-            1
-          </div>
-          <div className="text-sm text-muted-foreground">Career Path Selected</div>
-        </Card>
-      </div>
-    </div>
+    </>
   );
 }
 
