@@ -110,13 +110,13 @@ export default function RecommendationsPage() {
           careerId: r.careerId || `${r.role}-${r.industry}`,
           careerName: r.role,
           industry: r.industry,
-          fitScore: r.matchScore,
+          fitScore: r.matchScore,  // Career Compass format: already 0-100
         })),
         ...(userProfile?.aiAnalysisResults?.recommendations || []).map((r: any) => ({
           careerId: `${r.career}-${r.industry}`,
           careerName: r.career,
           industry: r.industry,
-          fitScore: Math.round((r.match_score || 0) * 100),
+          fitScore: Math.round((r.match_score || 0) * 100),  // Legacy format: 0.0-1.0, multiply by 100
         })),
       ]
 
@@ -297,7 +297,9 @@ export default function RecommendationsPage() {
         careerId: r.careerId || `${r.role || r.career}-${r.industry}`,
         industry: r.industry || "Technology",
         role: r.career || r.role,
-        matchScore: Math.round((r.match_score ?? r.matchScore ?? 0) * 100),
+        matchScore: r.matchScore !== undefined
+          ? Math.round(r.matchScore)  // Career Compass format: already 0-100
+          : Math.round((r.match_score ?? 0) * 100),  // Legacy format: 0.0-1.0, multiply by 100
         matchExplanation: r.reasoning || r.matchExplanation || r.whyGoodFit || "",
         // Career Compass fields
         medianSalary: r.medianSalary,

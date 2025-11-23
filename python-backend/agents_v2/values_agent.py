@@ -61,7 +61,16 @@ Return ONLY valid JSON, no additional text.
         try:
             response = await self.llm.chat(prompt)
             import json
-            result = json.loads(response.content.strip())
+            content = response.content.strip()
+
+            # Remove markdown code blocks if present
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+                content = content.strip()
+
+            result = json.loads(content)
             logger.info(f"ValuesAgent identified {len(result.get('values', []))} values")
             return result
         except Exception as e:
