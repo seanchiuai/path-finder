@@ -1,6 +1,5 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Save a realtime conversation to the database
 export const saveConversation = mutation({
@@ -12,10 +11,11 @@ export const saveConversation = mutation({
     messagesCount: v.number(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Unauthorized");
     }
+    const userId = identity.subject;
 
     return await ctx.db.insert("realtimeConversations", {
       userId,
@@ -33,10 +33,11 @@ export const saveConversation = mutation({
 export const getConversationHistory = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       return [];
     }
+    const userId = identity.subject;
 
     return await ctx.db
       .query("realtimeConversations")
@@ -52,10 +53,11 @@ export const getConversationById = query({
     conversationId: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       return null;
     }
+    const userId = identity.subject;
 
     const conversation = await ctx.db
       .query("realtimeConversations")
@@ -77,10 +79,11 @@ export const getConversationById = query({
 export const getRecentConversations = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       return [];
     }
+    const userId = identity.subject;
 
     return await ctx.db
       .query("realtimeConversations")
