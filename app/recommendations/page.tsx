@@ -7,7 +7,7 @@ import { useUser } from "@clerk/nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { IconBulb, IconArrowLeft, IconAlertCircle } from "@tabler/icons-react"
+import { IconBulb, IconArrowLeft, IconAlertCircle, IconTrash } from "@tabler/icons-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useState, useEffect } from "react"
@@ -41,7 +41,9 @@ export default function RecommendationsPage() {
   const getOrCreateCareerProfile = useMutation(api.careerProfiles.getOrCreateCareerProfile)
   const updateCareerProfile = useMutation(api.careerProfiles.updateCareerProfile)
   const createCareerRecommendations = useMutation(api.careerRecommendations.createCareerRecommendations)
+  const abandonRecommendations = useMutation(api.careerRecommendations.abandonRecommendations)
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
+  const [isAbandoning, setIsAbandoning] = useState(false)
 
   // Handlers
   const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
@@ -90,6 +92,24 @@ export default function RecommendationsPage() {
     } catch (error) {
       console.error("Failed to save career:", error)
       toast.error("Failed to save career")
+    }
+  }
+
+  const handleAbandonRecommendations = async () => {
+    if (!confirm("Are you sure you want to abandon these recommendations? This will clear all your career analysis and you'll need to start over.")) {
+      return
+    }
+
+    setIsAbandoning(true)
+    try {
+      await abandonRecommendations()
+      toast.success("Recommendations cleared. Starting fresh!")
+      router.push('/voice-realtime')
+    } catch (error) {
+      console.error("Failed to abandon recommendations:", error)
+      toast.error("Failed to clear recommendations")
+    } finally {
+      setIsAbandoning(false)
     }
   }
 
@@ -231,17 +251,29 @@ export default function RecommendationsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex items-center gap-4 mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => router.push('/dashboard')}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/dashboard')}
+            className="gap-2"
+          >
+            <IconArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+          <h1 className="text-3xl font-bold">Career Recommendations</h1>
+        </div>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleAbandonRecommendations}
+          disabled={isAbandoning}
           className="gap-2"
         >
-          <IconArrowLeft className="w-4 h-4" />
-          Back to Dashboard
+          <IconTrash className="w-4 h-4" />
+          {isAbandoning ? "Abandoning..." : "Abandon & Start Over"}
         </Button>
-        <h1 className="text-3xl font-bold">Career Recommendations</h1>
       </div>
       
       {/* Display AI Analysis Summary */}
