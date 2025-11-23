@@ -50,10 +50,12 @@ def search_career_videos(career_name: str, max_results: int = 5) -> List[Dict[st
         videos = []
         for search_result in search_response.get('items', []):
             if search_result['id']['kind'] == 'youtube#video':
+                video_id = search_result['id']['videoId']
                 videos.append({
-                    'videoId': search_result['id']['videoId'],
+                    'videoId': video_id,
                     'title': search_result['snippet']['title'],
-                    'channel': search_result['snippet']['channelTitle']
+                    'channel': search_result['snippet']['channelTitle'],
+                    'url': f'https://www.youtube.com/watch?v={video_id}'
                 })
 
         logger.info(f"Found {len(videos)} YouTube videos for '{career_name}'")
