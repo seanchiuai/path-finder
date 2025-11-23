@@ -1,5 +1,19 @@
 # Changelog
 
+## [Single Career Selection] - 2025-11-23
+
+### Changed - Limit Career Selection to 1 Choice
+**Career recommendation selection limited to 1 career instead of 3:**
+
+**Changes:**
+- **app/recommendations/page.tsx:87-99**: Selection logic now replaces existing selection when choosing new career
+- **app/recommendations/page.tsx:480-486**: UI text updated from "up to 3 careers" to "1 career"
+- **app/recommendations/page.tsx:495**: Button text changed to "Generate Action Plan" (singular)
+- **convex/selectedCareers.ts:5,43,63-64,77-78**: Backend validation enforces max 1 active career
+- Removed unused variables and handleSelectCareer function from old selection flow
+
+**Flow:** User selects career → Previous selection cleared → New career selected → Generate action plan for 1 career.
+
 ## [README Update] - 2025-11-23
 
 ### Updated - Project Documentation
