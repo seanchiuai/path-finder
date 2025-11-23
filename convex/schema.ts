@@ -106,4 +106,17 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_created", ["userId", "createdAt"])
     .index("by_conversation_id", ["conversationId"]),
+
+  // Planning Conversations (Claude Code planning sessions)
+  planningConversations: defineTable({
+    userId: v.string(),
+    conversationId: v.string(), // Unique ID for each planning session
+    title: v.string(), // e.g., "OpenAI Realtime Integration Plan"
+    fullConversation: v.string(), // Entire planning conversation as text
+    metadata: v.optional(v.any()), // Optional metadata (files created, commits, etc.)
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_conversation_id", ["conversationId"]),
 });
