@@ -139,7 +139,7 @@ export function useRealtimeSession(callbacks: RealtimeSessionCallbacks = {}) {
         model: 'gpt-4o-realtime-preview-2025-06-03',
         config: {
           inputAudioTranscription: {
-            model: 'gpt-4o-mini-transcribe',
+            model: 'whisper-1',
             language: language,
           },
         },
