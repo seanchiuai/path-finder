@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
 /**
- * Get all selected careers for the current user (max 3)
+ * Get all selected careers for the current user (max 1)
  */
 export const getSelectedCareers = query({
   args: {},
@@ -40,7 +40,7 @@ export const getActiveSelectedCareers = query({
 });
 
 /**
- * Select careers for action plan generation (max 3)
+ * Select careers for action plan generation (max 1)
  */
 export const selectCareers = mutation({
   args: {
@@ -60,13 +60,13 @@ export const selectCareers = mutation({
       throw new Error("Not authenticated");
     }
 
-    if (args.careerIds.length > 3) {
-      throw new Error("Maximum 3 careers can be selected");
+    if (args.careerIds.length > 1) {
+      throw new Error("Maximum 1 career can be selected");
     }
 
     const userId = identity.subject;
 
-    // Check if user already has 3 active careers
+    // Check if user already has 1 active career
     const existingCareers = await ctx.db
       .query("selectedCareers")
       .withIndex("by_userId_status", (q) =>
@@ -74,8 +74,8 @@ export const selectCareers = mutation({
       )
       .collect();
 
-    if (existingCareers.length + args.careers.length > 3) {
-      throw new Error("Cannot select more than 3 active careers");
+    if (existingCareers.length + args.careers.length > 1) {
+      throw new Error("Cannot select more than 1 active career");
     }
 
     const selectedIds = [];

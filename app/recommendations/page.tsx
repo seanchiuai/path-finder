@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { Id } from "@/convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -30,18 +29,12 @@ export default function RecommendationsPage() {
   const [selectedCareers, setSelectedCareers] = useState<Set<string>>(new Set())
   const [isGeneratingPlans, setIsGeneratingPlans] = useState(false)
 
-  // Get default project and folder for saving careers
+  // Get default project for saving careers
   const defaultProject = useQuery(
     user ? api.careerProjects.getDefaultProject : "skip"
   )
 
-  const defaultFolder = useQuery(
-    defaultProject ? api.careerFolders.getDefaultFolder : "skip",
-    defaultProject ? { projectId: defaultProject._id } : "skip"
-  )
-
   // Mutations
-  const selectRecommendation = useMutation(api.careerRecommendations.selectRecommendation)
   const createSavedCareer = useMutation(api.savedCareers.createSavedCareer)
   const getOrCreateCareerProfile = useMutation(api.careerProfiles.getOrCreateCareerProfile)
   const updateCareerProfile = useMutation(api.careerProfiles.updateCareerProfile)
@@ -56,33 +49,11 @@ export default function RecommendationsPage() {
   const updateGeneratingStatus = useMutation(api.savedCareers.updateGeneratingStatus)
   const initializeUserDefaults = useMutation(api.init.initializeUserDefaults)
 
-  const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
   const [isAbandoning, setIsAbandoning] = useState(false)
   const [removingCareer, setRemovingCareer] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(false)
 
   // Handlers
-  const handleSelectCareer = async (career: { career?: string; role?: string; industry: string; matchScore?: number; matchExplanation?: string }, recommendationId: string) => {
-    const careerKey = `${career.career || career.role}-${career.industry}`
-    setSelectingCareer(careerKey)
-
-    try {
-      await selectRecommendation({
-        recommendationId: recommendationId as Id<"careerRecommendations">,
-        industry: career.industry,
-        role: career.career || career.role || "",
-      })
-
-      toast.success(`Selected ${career.career || career.role} as your career path!`)
-      // Navigate to dashboard after selection
-      router.push('/dashboard')
-    } catch (error) {
-      console.error("Failed to select career:", error)
-      toast.error("Failed to select career. Please try again.")
-    } finally {
-      setSelectingCareer(null)
-    }
-  }
 
   const handleToggleCareerSelection = (careerId: string) => {
     setSelectedCareers(prev => {
@@ -90,10 +61,8 @@ export default function RecommendationsPage() {
       if (newSet.has(careerId)) {
         newSet.delete(careerId)
       } else {
-        if (newSet.size >= 3) {
-          toast.error("You can only select up to 3 careers")
-          return prev
-        }
+        // Only allow 1 career selection - replace existing selection
+        newSet.clear()
         newSet.add(careerId)
       }
       return newSet
@@ -102,7 +71,7 @@ export default function RecommendationsPage() {
 
   const handleGenerateActionPlans = async () => {
     if (selectedCareers.size === 0) {
-      toast.error("Please select at least one career")
+      toast.error("Please select a career")
       return
     }
 
@@ -207,7 +176,7 @@ export default function RecommendationsPage() {
         })
       }
 
-      toast.success(`Generated action plans for ${result.selectedCareers.length} career${result.selectedCareers.length > 1 ? 's' : ''}!`)
+      toast.success("Generated action plan for your selected career!")
       router.push('/saved-careers')
     } catch (error) {
       console.error('Failed to generate action plans:', error)
@@ -479,12 +448,12 @@ export default function RecommendationsPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-lg mb-1">Select Your Career Paths</h3>
+                <h3 className="font-semibold text-lg mb-1">Select Your Career Path</h3>
                 <p className="text-sm text-muted-foreground">
-                  Choose up to 3 careers to create personalized action plans with gamified progress tracking
+                  Choose 1 career to create a personalized action plan with gamified progress tracking
                 </p>
                 <p className="text-sm font-medium mt-2">
-                  {selectedCareers.size}/3 careers selected
+                  {selectedCareers.size === 1 ? "1 career selected" : "No career selected"}
                 </p>
               </div>
               <Button
@@ -494,7 +463,7 @@ export default function RecommendationsPage() {
                 className="gap-2"
               >
                 <IconSparkles className="w-5 h-5" />
-                {isInitializing ? "Initializing..." : isGeneratingPlans ? "Generating Plans..." : `Generate Action Plans (${selectedCareers.size})`}
+                {isInitializing ? "Initializing..." : isGeneratingPlans ? "Generating Plan..." : "Generate Action Plan"}
               </Button>
             </div>
           </CardContent>
