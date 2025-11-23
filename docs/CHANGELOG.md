@@ -1,5 +1,17 @@
 # Changelog
 
+## [Save Button Fix] - 2025-11-23
+
+### Fixed - Career Save Functionality
+**Root Cause:** getDefaultFolder was mutation called with useQuery, incompatible types, no error handling.
+
+**Changes:**
+- **convex/careerFolders.ts:160-220**: Split into getDefaultFolder (query) + ensureDefaultFolder (mutation)
+- **app/recommendations/page.tsx:193-255**: Fixed TypeScript types for both data formats (Convex + AI analysis)
+- Added loading state, proper error handling, match_score normalization (0.0-1.0 → 0-100)
+
+**Result:** Save button now properly saves LLM-generated careers to Convex database.
+
 ## [Dynamic Career Generation] - 2025-11-23
 
 ### Changed - LLM Generates Careers Dynamically
