@@ -1,5 +1,34 @@
 # Changelog
 
+## [Backend Integration] - 2025-11-23
+
+### Added - Career Compass Pipeline Integration
+**Integrated Career Compass's advanced recommendation system with gamification:**
+
+**Backend Integration:**
+- Copied Career Compass agents to `python-backend/agents_v2/`: pipeline, skill_agent, personality_agent, passion_agent, goal_lifestyle_agent, values_agent, orchestrator (V1 & V2), plan_detail_agent, career_library, career_search_tool
+- Copied utilities: `plan_generator.py` (gamification logic), `youtube_search.py` (video resources), `gemini_chatbot.py` (Gemini LLM wrapper)
+- Updated `python-backend/main.py`: USE_CAREER_COMPASS env toggle, Career Compass pipeline in /api/onboarding/start, new endpoints for selected-careers/dashboard/careers/tasks
+- Backup strategy: Career Compass (default) → SpoonOS → Local agents
+- New Python dependencies: youtube-search-python, google-generativeai
+
+**Convex Schema Enhancements:**
+- Enhanced `careerRecommendations`: Added careerId, medianSalary, growthOutlook, estimatedTime, summary fields
+- Created `selectedCareers` table: Max 3 selected careers with status tracking (active/completed/abandoned)
+- Enhanced `actionPlans`: Added phases (phaseId, name, order, status), tasks (taskId, title, track, phase, xp, status), videos (videoId, title, url)
+- Created `careerProgress` table: Gamification tracking (xp, level, completionPercent, streak, tasksCompletedThisWeek, xpToNextLevel)
+
+**Convex Functions:**
+- `convex/selectedCareers.ts`: getSelectedCareers, selectCareers, updateCareerStatus, removeSelectedCareer
+- `convex/careerProgress.ts`: getAllProgress, getCareerProgress, getDashboardSummary, initializeProgress, updateTaskProgress, resetWeeklyTasks
+- `convex/actionPlans.ts`: getActionPlanByCareer, upsertCareerCompassPlan, updateTaskStatus with phase unlocking (70% threshold)
+
+**Architecture Changes:**
+- Voice onboarding (OpenAI Realtime) → Career Compass pipeline → Convex storage
+- Python backend returns data structures, frontend saves to Convex
+- Frontend queries Convex for recommendations, dashboard, progress
+- Retained voice agent feature, replaced recommendation sub-agents with Career Compass
+
 ## [Merged] - 2025-11-22
 
 ### Merged PR #2: Multi-agent System
