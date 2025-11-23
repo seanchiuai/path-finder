@@ -1,0 +1,242 @@
+{
+    "projectOverview": {
+      "productName": "PathFinder (Career OS)",
+      "description": "An AI-powered career discovery platform that uses voice-based onboarding to understand users, then leverages multi-agent analysis to match them with ideal career paths and provide actionable recommendations.",
+      "targetAudience": "Students, recent graduates, and early-career professionals seeking clarity on career direction"
+    },
+    "purposeAndGoals": {
+      "problemStatement": "Young professionals struggle to identify suitable career paths due to limited exposure, information overload, and lack of personalized guidance. Traditional career assessments are text-heavy and impersonal.",
+      "solution": "A conversational AI that interviews users via voice to understand their skills, personality, passions, goals, and values - then uses multi-agent AI to analyze this data and recommend matching careers with percentage fit scores.",
+      "keyObjectives": [
+        "Enable natural voice-based career discovery interviews",
+        "Provide AI-analyzed career recommendations with match percentages",
+        "Display career recommendations in a clear, actionable format"
+      ]
+    },
+    "userPersonasAndUseCases": {
+      "primaryPersona": {
+        "description": "College student or recent graduate unsure about career direction, tech-comfortable, prefers interactive experiences over reading lengthy assessments",
+        "useCases": [
+          "Complete voice onboarding to share background and interests",
+          "View ranked career recommendations with match percentages",
+          "Explore individual career details to understand fit"
+        ]
+      }
+    },
+    "techStack": {
+      "frontend": {
+        "technology": "Next.js 15 (App Router)",
+        "reasoning": "Aligns with your preferred stack, excellent React ecosystem, server components for performance, seamless API route integration for ElevenLabs signed URLs",
+        "prosForThisProject": [
+          "Server components reduce client bundle for voice-heavy app",
+          "API routes handle ElevenLabs auth token generation",
+          "App Router provides clean routing for multi-step flow",
+          "Strong TypeScript support",
+          "Easy Vercel deployment"
+        ],
+        "consForThisProject": [
+          "Voice streaming happens client-side anyway",
+          "Need to manage hydration carefully with audio state"
+        ]
+      },
+      "backend": {
+        "technology": "Python (FastAPI) + SpoonOS",
+        "reasoning": "SpoonOS requires Python. FastAPI provides async endpoints for agent orchestration and integrates cleanly with SpoonOS's StateGraph system.",
+        "prosForThisProject": [
+          "SpoonOS only supports Python as of June 2025",
+          "FastAPI async/await aligns with agent async execution",
+          "Easy to define endpoints for agent workflows",
+          "Good typing support with Pydantic models",
+          "SpoonOS StateGraph handles multi-agent coordination natively"
+        ],
+        "consForThisProject": [
+          "Two languages (TypeScript + Python) increases complexity",
+          "Need to deploy Python backend separately from Next.js",
+          "Cross-service communication adds latency"
+        ]
+      },
+      "database": {
+        "technology": "Convex",
+        "reasoning": "Your preferred stack - real-time sync, TypeScript-native, handles user profiles, agent outputs, and career recommendations seamlessly",
+        "prosForThisProject": [
+          "Real-time updates when agent processing completes",
+          "Type-safe queries and mutations",
+          "Built-in file storage for resume uploads",
+          "Serverless - no infrastructure management",
+          "Easy integration with Next.js and Clerk"
+        ],
+        "consForThisProject": [
+          "Python backend needs HTTP actions to read/write Convex",
+          "Not a traditional SQL database - learning curve for complex queries"
+        ]
+      },
+      "authentication": {
+        "technology": "Clerk",
+        "reasoning": "Your preferred stack - handles auth, user management, and integrates directly with Convex via webhooks",
+        "prosForThisProject": [
+          "Pre-built React components for sign-up/login",
+          "Webhook integration stores users in Convex automatically",
+          "Session tokens can be passed to Python backend for verification",
+          "Social auth (Google, GitHub) out of the box"
+        ],
+        "consForThisProject": [
+          "Monthly cost at scale",
+          "Need to verify tokens in Python backend separately"
+        ]
+      },
+      "hosting": {
+        "technology": "Vercel (Next.js) + Railway/Render (Python)",
+        "reasoning": "Vercel for frontend is seamless. Railway or Render handles Python backend with easy deployment and WebSocket support if needed.",
+        "prosForThisProject": [
+          "Vercel: Zero-config Next.js deployment",
+          "Railway/Render: Simple Python deployment with environment variables",
+          "Both support environment secrets for API keys",
+          "Scaling handled automatically"
+        ],
+        "consForThisProject": [
+          "Two hosting platforms to manage",
+          "Cold starts on Railway/Render free tier",
+          "Cross-origin requests need CORS configuration"
+        ]
+      },
+      "additionalTools": [
+        {
+          "category": "Voice AI",
+          "technology": "ElevenLabs Conversational AI (React SDK)",
+          "reasoning": "Core differentiator - provides real-time voice conversation with sub-second latency, turn-taking detection, and LLM integration. React SDK has useConversation hook for easy integration."
+        },
+        {
+          "category": "Multi-Agent Orchestration",
+          "technology": "SpoonOS (StateGraph)",
+          "reasoning": "Required for hackathon - provides graph-based workflow orchestration with multi-agent coordination, state management, and streaming execution for the ProfileAnalyzer → CareerMatcher → Orchestrator pipeline."
+        },
+        {
+          "category": "UI Components",
+          "technology": "shadcn/ui + Tailwind CSS",
+          "reasoning": "Your preferred stack - provides polished, accessible components with full customization control"
+        },
+        {
+          "category": "Resume Parsing (Optional)",
+          "technology": "Convex File Storage + Python parsing",
+          "reasoning": "Users can optionally upload resume. Store in Convex, Python backend extracts text for agent analysis."
+        }
+      ]
+    },
+    "features": {
+      "mvpFeatures": [
+        {
+          "name": "Voice Onboarding Interview",
+          "description": "ElevenLabs-powered voice conversation that asks structured questions about user's skills, personality, passions, goals, and values. AI speaks questions, user responds via voice.",
+          "priority": "must-have"
+        },
+        {
+          "name": "Multi-Agent Career Analysis",
+          "description": "SpoonOS agents (ProfileAnalyzer, CareerMatcher, Orchestrator) process onboarding data and generate ranked career recommendations with match percentages.",
+          "priority": "must-have"
+        },
+        {
+          "name": "Career Recommendations Display",
+          "description": "Card-based UI showing ranked careers with match %, description, and 'why it fits' explanation. Users can click to see basic details.",
+          "priority": "must-have"
+        }
+      ],
+      "niceToHaveFeatures": [
+        {
+          "name": "Career Detail Page",
+          "description": "Expanded view with day-in-the-life videos (YouTube), salary data, growth projections, and job listings",
+          "priority": "nice-to-have"
+        },
+        {
+          "name": "Action Plan Generator",
+          "description": "Personalized step-by-step plan with timeline, required skills, and recommended projects",
+          "priority": "nice-to-have"
+        },
+        {
+          "name": "Networking Map",
+          "description": "Alumni connections and industry experts based on user's college/university",
+          "priority": "nice-to-have"
+        },
+        {
+          "name": "Progress Gamification",
+          "description": "Duolingo-style streaks, XP, and badges for completing action plan steps",
+          "priority": "nice-to-have"
+        },
+        {
+          "name": "Resume Parsing",
+          "description": "Upload resume to auto-extract skills and experience for agent analysis",
+          "priority": "nice-to-have"
+        }
+      ],
+      "outOfScope": [
+        "Real-time job application tracking",
+        "Direct messaging with industry experts",
+        "Interview preparation modules",
+        "Salary negotiation tools",
+        "Company reviews integration"
+      ]
+    },
+    "technicalArchitecture": {
+      "systemDesign": "Three-tier architecture: (1) Next.js frontend handles UI and ElevenLabs voice sessions, (2) Python/FastAPI backend runs SpoonOS agents and orchestrates career analysis, (3) Convex serves as real-time database shared by both. Frontend calls Python backend via REST for agent workflows, Python writes results to Convex via HTTP actions, frontend subscribes to Convex for real-time updates.",
+      "dataModels": [
+        {
+          "modelName": "users",
+          "fields": [
+            "clerkId: string (indexed)",
+            "email: string",
+            "name: string",
+            "onboardingComplete: boolean",
+            "createdAt: number"
+          ]
+        },
+        {
+          "modelName": "careerProfiles",
+          "fields": [
+            "userId: Id<users>",
+            "skills: array<string>",
+            "personality: object (traits)",
+            "passions: array<string>",
+            "goals: object (income, location, remote, timeline)",
+            "values: array<string>",
+            "rawTranscript: string (voice interview text)",
+            "createdAt: number",
+            "updatedAt: number"
+          ]
+        },
+        {
+          "modelName": "agentOutputs",
+          "fields": [
+            "userId: Id<users>",
+            "agentType: string (ProfileAnalyzer | CareerMatcher | Orchestrator)",
+            "input: object",
+            "output: object",
+            "processingTimeMs: number",
+            "createdAt: number"
+          ]
+        },
+        {
+          "modelName": "careerRecommendations",
+          "fields": [
+            "userId: Id<users>",
+            "careers: array<object> (title, matchPercent, description, whyItFits)",
+            "selectedCareer: string | null",
+            "createdAt: number"
+          ]
+        }
+      ],
+      "apiStructure": "Next.js API Routes: POST /api/elevenlabs/signed-url (generate auth for voice session), POST /api/onboarding/complete (trigger agent pipeline). Python FastAPI: POST /agents/analyze (run SpoonOS pipeline), GET /agents/status/{jobId} (check processing status). Convex HTTP Actions: POST /api/convex/save-profile, POST /api/convex/save-recommendations (called by Python backend).",
+      "thirdPartyIntegrations": [
+        "ElevenLabs Conversational AI - Voice agent for onboarding interviews",
+        "Clerk - Authentication and user management",
+        "OpenAI/Anthropic API - LLM backbone for SpoonOS agents"
+      ]
+    },
+    "uiUxConsiderations": {
+      "designApproach": "Clean, minimal interface with card-based layouts. Voice interaction should feel like talking to a career counselor, not using software. Processing states show friendly animations. Career cards are scannable with clear match percentages.",
+      "keyUserFlows": [
+        "Sign up → First-time onboarding detection → Voice interview (5-7 questions) → Processing animation → Career recommendations",
+        "Return user → Dashboard with saved recommendations → Click career card → View details",
+        "Redo onboarding → Settings → 'Retake Interview' → Voice flow → New recommendations"
+      ],
+      "styleGuidelines": "Use shadcn/ui components. Primary color: calming blue/purple gradient. Large, readable typography. Generous whitespace. Voice interface shows audio waveform visualization during conversation. Cards have subtle shadows and hover states."
+    }
+  }

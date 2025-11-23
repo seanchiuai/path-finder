@@ -220,4 +220,55 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_user_type", ["userId", "memoryType"]),
+
+  // Bookmarks table with vector embeddings
+  bookmarks: defineTable({
+    folderId: v.id("folders"),
+    userId: v.string(),
+    url: v.string(),
+    title: v.string(),
+    description: v.optional(v.string()),
+    previewImageId: v.optional(v.id("_storage")),
+    faviconId: v.optional(v.id("_storage")),
+    favicon: v.optional(v.string()),
+    embedding: v.optional(v.array(v.float64())), // 1536 dimensions for text-embedding-3-small
+    tags: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_folder", ["folderId"])
+    .index("by_user", ["userId"])
+    .index("by_folder_url", ["folderId", "url"])
+    .index("by_user_url", ["userId", "url"]) // For duplicate URL detection
+    .searchIndex("by_embedding", {
+      searchField: "embedding",
+      filterFields: ["userId", "folderId"],
+    }),
+
+  // Realtime Conversations (OpenAI Realtime API)
+  realtimeConversations: defineTable({
+    userId: v.string(),
+    conversationId: v.string(), // Unique ID for each session
+    agentName: v.string(), // e.g., "lisa"
+    fullTranscript: v.string(), // Entire conversation as formatted string
+    sessionDuration: v.optional(v.number()), // Duration in seconds
+    messagesCount: v.number(), // Number of messages exchanged
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_conversation_id", ["conversationId"]),
+
+  // Planning Conversations (Claude Code planning sessions)
+  planningConversations: defineTable({
+    userId: v.string(),
+    conversationId: v.string(), // Unique ID for each planning session
+    title: v.string(), // e.g., "OpenAI Realtime Integration Plan"
+    fullConversation: v.string(), // Entire planning conversation as text
+    metadata: v.optional(v.any()), // Optional metadata (files created, commits, etc.)
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_created", ["userId", "createdAt"])
+    .index("by_conversation_id", ["conversationId"]),
 });

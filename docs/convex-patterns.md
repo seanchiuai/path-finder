@@ -1,5 +1,22 @@
 # Convex guidelines
 
+## Current Schema
+
+**Tables:**
+- `numbers` - 🗑️ Demo/testing only
+- `todos` - Task management (title, description, status, userId)
+- `chatMessages` - AI chat history (userId, role, content, bookmarkReferences, projectId)
+- `userMemory` - AI context storage (userId, memoryType, key, value)
+- `projects` - Project organization (userId, name, isDefault)
+- `folders` - Hierarchical folders (projectId, parentFolderId, name, userId)
+- `bookmarks` - Vector-enabled bookmarks (url, title, description, embedding[1536], tags)
+
+**Key Indexes:**
+- `by_user` - Row-level security filtering
+- `by_embedding` - Vector search on bookmarks
+- `by_project_parent` - Efficient folder tree queries
+- `by_user_default` - Default project lookup
+
 ## Function guidelines
 
 ### New function syntax
@@ -921,6 +938,75 @@ export default defineSchema({
   ...authTables,
   ...applicationTables,
 });
+\`\`\`
+
+## Current Backend Functions
+
+### Core Functions by File
+
+**bookmarks.ts:**
+- ✅ `getBookmark`, `listBookmarksInFolder`, `listBookmarksWithoutEmbeddings` (queries)
+- ✅ `createBookmark`, `updateBookmarkEmbedding`, `updateBookmark`, `deleteBookmark` (mutations)
+
+**chat.ts:**
+- 🚧 `getChatResponse` (action) - OpenAI integration, **TODO: RAG bookmark search not implemented (lines 140-146)**
+
+**chatMessages.ts:**
+- ✅ `saveMessage`, `listRecentMessages`, `clearHistory`
+
+**embeddings.ts:**
+- ✅ `generateEmbedding`, `generateBookmarkEmbedding`, `batchGenerateEmbeddings` (actions with retry logic)
+
+**folders.ts:**
+- ✅ `listFoldersInProject`, `getFolder`, `getFolderPath`
+- ✅ `createFolder`, `updateFolder`, `moveFolder`, `deleteFolder`
+- **Pattern:** MAX_FOLDER_DEPTH = 5, cycle detection, recursive tree building
+
+**memory.ts:**
+- ✅ `saveMemory`, `getUserMemories`, `deleteMemory`
+
+**projects.ts:**
+- ✅ `listUserProjects`, `getProject`, `getDefaultProject`
+- ✅ `createProject`, `updateProject`, `deleteProject`, `setDefaultProject`
+- **Pattern:** Post-insert validation, rollback on duplicate, cascade deletion
+
+**search.ts:**
+- ✅ `searchBookmarks`, `searchBookmarksInFolder` (vector search with OpenAI embeddings)
+
+**todos.ts:**
+- ✅ `list`, `create`, `toggleComplete`, `remove`, `update`
+
+**myFunctions.ts:**
+- 🗑️ `listNumbers`, `addNumber`, `myAction` - Demo code, should be removed
+
+### Known Issues
+
+1. **🚧 Incomplete RAG** - `chat.ts:140-146` - Bookmark retrieval via semantic search not implemented
+2. **🗑️ Demo Code** - `myFunctions.ts` and `numbers` table should be cleaned up
+3. **Type Workaround** - `search.ts` uses `as any` for embedding types due to Convex limitations
+
+### Key Patterns
+
+**Vector Search:**
+- OpenAI text-embedding-3-small (1536 dimensions)
+- Token truncation with tiktoken (8192 limit)
+- Retry logic with exponential backoff for 429/500/502/503
+
+**Hierarchical Data:**
+- Cycle detection with visited sets
+- Depth limits (MAX_FOLDER_DEPTH = 5)
+- Tree building with recursive functions
+
+**Race Condition Handling:**
+- Post-insert validation (projects)
+- Rollback patterns (updateProject)
+- Optimistic concurrency
+
+**Authentication Pattern (All Functions):**
+\`\`\`ts
+const identity = await ctx.auth.getUserIdentity();
+if (!identity) throw new Error("Not authenticated");
+const userId = identity.subject;
 \`\`\`
 
 # Convex Components

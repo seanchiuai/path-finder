@@ -1,5 +1,12 @@
 # Component Patterns
 
+## Component Organization
+
+**Structure:**
+- `/components/ui/` - 23 shadcn/ui primitives (button, card, dialog, etc.)
+- `/components/features/` - Feature-specific components (chat, folders, projects, search)
+- `/components/` root - Layout/navigation components
+
 ## Component Structure
 
 ### Functional Components (Required)
@@ -11,6 +18,18 @@ import { ComponentProps } from "@/types";
 export function MyComponent({ prop1, prop2 }: ComponentProps) {
   return <div>Content</div>;
 }
+```
+
+### Standard Pattern
+```tsx
+"use client"
+// Imports (React, Convex, UI components, icons)
+// TypeScript interfaces
+// Component function with destructured props
+// Convex hooks (queries, mutations, actions)
+// Local state hooks
+// Event handlers
+// Return JSX with Tailwind classes
 ```
 
 ### Props Patterns
@@ -121,3 +140,61 @@ function Form() {
 - Use pre-built components from `/components/ui`
 - Customize via className prop
 - Compose components for complex UI
+
+## Icon Libraries
+
+**Primary:** `@tabler/icons-react`
+- IconPlus, IconFolder, IconTrash, IconEdit, etc.
+
+**Secondary:** `lucide-react`
+- Send, Loader2, Search, X, ChevronRight, etc.
+
+**Sizing:**
+- `h-4 w-4` - Small icons (buttons)
+- `h-5 w-5` - Medium icons (navigation)
+
+## Current Component Status
+
+### ✅ Working Components
+- All 23 shadcn/ui primitives (button, card, dialog, dropdown-menu, input, select, sidebar, table, tooltip, etc.)
+- Chat system (chat-sidebar, chat-input, chat-message, chat-header, memory-panel)
+- Folder/project management (folder-tree, folder-tree-item, project-switcher, new/rename dialogs)
+- Search (semantic-search with vector embeddings)
+- Layout (app-sidebar, nav-main, nav-secondary, nav-user, nav-documents)
+- TodoDashboard (complete CRUD with filtering)
+
+### ⚠️ Known Issues
+- **folder-tree.tsx:13** - Unused `FolderNode` interface (TypeScript linting error, blocks production builds)
+
+### 🗑️ Deprecated/Example Components
+- add-bookmark-example.tsx (example only)
+- section-cards.tsx (demo data)
+- chart-area-interactive.tsx (mock data)
+
+## Accessibility Patterns
+
+```tsx
+// Icon-only buttons
+<Button size="icon" aria-label="Add item" type="button">
+  <Plus className="h-4 w-4" />
+</Button>
+
+// Collapsible elements
+<div aria-expanded={isOpen}>
+
+// Keyboard handlers
+const handleKeyDown = (e: React.KeyboardEvent) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    // Submit
+  }
+  if (e.key === "Escape") {
+    // Close
+  }
+}
+```
+
+**Best Practices:**
+- `type="button"` on all non-submit buttons
+- `aria-label` on icon-only buttons
+- Keyboard support: Enter, Escape, Shift+Enter
+- Screen reader text: `<span className="sr-only">`

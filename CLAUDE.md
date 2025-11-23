@@ -1,9 +1,12 @@
 # CLAUDE.md
 
+## Project
+**PathFinder (Career OS)** - AI-powered career discovery platform with voice onboarding (ElevenLabs) and multi-agent career analysis.
+
 ## Workflow
 Check `PRD.json` for product requirements → `.claude/skills/` → `.claude/agents/` → `.claude/plans/`.
 
-**Agents:** clerk (auth), convex (backend), deployment (Vercel), nextjs (frontend)
+**Agents:** clerk (auth), convex (backend), deployment (Vercel), nextjs (frontend), shadcn (UI), error-fixer (systematic fixes), status-reporter (area analysis)
 
 ## Stack & Patterns
 Next.js 15 • Tailwind 4 + shadcn/ui • Clerk → JWT → Convex • TypeScript strict • `@/*` imports
@@ -17,7 +20,7 @@ Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `midd
 **Python Backend:** `python-backend/main.py` (FastAPI) • Proxy via `convex/voice.ts`, `convex/spoonos.ts`
 
 ## Structure
-`/app/(auth|protected)` `/components` `/convex` `/docs` (all docs here, `CHANGELOG.md` for critical notes) `/.claude`
+`/app/(auth|protected)` `/components` `/convex` `/docs` (all docs + `CHANGELOG.md` + `/reports` + `/human-only-DONOTMODIFY`) `/.claude` (agents, commands, skills, plans)
 
 ## Python Backend Integration
 **Python microservice for ElevenLabs voice + Spoon OS:**
@@ -56,6 +59,26 @@ Auth: `ConvexProviderWithClerk` | Schema: `convex/schema.ts` | Protection: `midd
 **Convex:** Follow `docs/convex-patterns.md` exactly | **Env:** Get key from user → add to `.env.local` | **Impl:** UI first → functionality. Modular code.
 
 **Pre-commit:** Build + tests + lint, >80% coverage, no vulnerabilities
+
+## Key Commands
+- `/execute-plan [plan.md]` - Execute implementation plans with todo tracking
+- `/full-ui-test` - Test entire app with Playwright, log errors to `/docs/errors`
+- `/identify-cause` - Deep root cause analysis before fixing
+- `/double-check` - Review generated work from multiple perspectives
+- `/update-docs` - Update docs/ using parallel agents
+- `/PR [title/description]` - Create GitHub pull request
+- `/npmrundev` - Run dev server and fix blocking errors
+- `/init [PRD.json]` - Initialize new project from PRD
+- `/plans-setup [CHANGELOG/PRD/features]` - Create implementation plans
+- `/agents-setup [PRD/description]` - Create agents for tech stack
+
+## Recent Updates (Updated: 2025-01-22)
+- **New Project:** PathFinder (Career OS) - voice-based career discovery platform with ElevenLabs integration and multi-agent analysis (SpoonOS)
+- **New Agents:** `agent-error-fixer` (systematic fixes), `agent-status-reporter` (area analysis), `agent-shadcn` (UI components)
+- **Removed Agents:** agent-microlink, agent-openai, agent-unfurl (old bookmark-related agents)
+- **New Commands:** `/execute-plan`, `/identify-cause`, `/double-check`, `/update-docs`, `/init`
+- **Documentation:** Added `/docs/reports` for status reports, `/docs/human-only-DONOTMODIFY` for human-only instructions
+- **Enhanced Error Analysis:** Commands now emphasize identifying root cause over surface-level fixes
 
 ## Important Notes
 - Never add backwards compatibility

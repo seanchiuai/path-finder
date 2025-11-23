@@ -1,5 +1,15 @@
 # API Routes Guide
 
+## Current Status
+
+**API Routes:** None currently implemented
+**Location:** `/app/api/` directory does not exist
+
+**Note:** This project uses Convex for backend operations. API routes are only needed for:
+- Third-party webhooks (Stripe, GitHub, etc.)
+- External integrations requiring HTTP endpoints
+- Custom server-side logic not supported by Convex
+
 ## Route Structure (Next.js 15 App Router)
 
 ### File Location

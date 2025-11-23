@@ -5,15 +5,37 @@
 ### Directory Layout
 ```text
 /app
-├── (auth)/          # Public routes (login, signup)
-├── (protected)/     # Protected routes (require auth)
-├── layout.tsx       # Root layout
-└── page.tsx         # Home page
+├── layout.tsx           # Root layout (ClerkProvider + ConvexClientProvider)
+├── page.tsx             # Landing page (auth gate)
+├── tasks/
+│   ├── layout.tsx       # Tasks layout with AppSidebar + ChatSidebar
+│   ├── page.tsx         # Todo dashboard
+│   └── data.json        # 🗑️ Unused sample data
+├── bookmarks/
+│   ├── layout.tsx       # Bookmarks layout with folder/project sidebar
+│   └── page.tsx         # 🚧 Incomplete bookmark UI (placeholder only)
+├── voice-realtime/
+│   ├── layout.tsx       # Protected layout with Clerk auth
+│   ├── page.tsx         # Entry point with context providers
+│   └── App.tsx          # Main LISA voice conversation app
+├── voice-demo/
+│   └── page.tsx         # ElevenLabs voice demo (Python backend)
+├── voice-demo-direct/
+│   └── page.tsx         # Direct voice demo variant
+├── search-demo/
+│   └── page.tsx         # Vector search demo (semantic bookmarks)
+├── server/
+│   ├── page.tsx         # SSR demo with Convex preloadQuery
+│   └── inner.tsx        # Server component with usePreloadedQuery
+└── font-test/
+    └── page.tsx         # ⚠️ Dev-only font testing page (no auth)
 ```
 
 ### Route Groups
-- `(auth)`: Public authentication pages
-- `(protected)`: Pages requiring authentication (protected by middleware)
+**Note:** No route groups used. Auth handled via:
+- Component-level `<Authenticated>` wrappers (tasks, bookmarks)
+- Middleware protection (only `/server` route)
+- Manual `useUser()` checks (search-demo)
 
 ### File Conventions
 - `page.tsx`: Route UI
@@ -52,7 +74,51 @@ router.push("/dashboard");
 ## File Locations
 - Pages: `/app/**/*.tsx`
 - Components: `/components/**/*.tsx`
-- UI Components: `/components/ui/**/*.tsx`
+- UI Components: `/components/ui/**/*.tsx` (23 shadcn/ui primitives)
+- Features: `/components/features/**/*.tsx` (chat, folders, projects, search)
 - Hooks: `/hooks/**/*.ts`
 - Utils: `/lib/**/*.ts`
 - Backend: `/convex/**/*.ts`
+
+## Current Route Status
+
+| Route | Status | Auth | Notes |
+|-------|--------|------|-------|
+| `/` | ✅ | Public/Gate | Landing with sign-in/sign-up, auto-redirects authenticated users to `/tasks` |
+| `/tasks` | ✅ | `<Authenticated>` | Todo dashboard with CRUD, tabs, real-time sync |
+| `/bookmarks` | 🚧 | `<Authenticated>` | Folder/project sidebar works, main UI shows placeholders only |
+| `/search-demo` | ✅ | `useUser()` | Vector search demo with OpenAI embeddings |
+| `/server` | ✅ | Middleware | SSR demo with Convex preloadQuery |
+| `/font-test` | ⚠️ | None | Dev page - should be removed or protected |
+
+## Known Issues
+
+1. **⚠️ TypeScript Build Error** - `folder-tree.tsx:13` - Unused `FolderNode` interface blocks production builds
+2. **🚧 Incomplete Bookmarks UI** - `/bookmarks/page.tsx` needs actual bookmark list/card implementation
+3. **🗑️ Unused Data** - `/tasks/data.json` - 68 sample tasks not used by TodoDashboard
+4. **⚠️ Unprotected Dev Page** - `/font-test` has no auth protection
+
+## Authentication Pattern
+
+**Root page (`/`):**
+```tsx
+<Authenticated>
+  <RedirectToTasks />
+</Authenticated>
+<Unauthenticated>
+  <SignInForm />
+</Unauthenticated>
+```
+
+**Protected layouts:**
+```tsx
+<Authenticated>
+  {children}
+</Authenticated>
+```
+
+**Middleware (`middleware.ts`):**
+```tsx
+clerkMiddleware()
+// Only protects: /server
+```

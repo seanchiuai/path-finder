@@ -1,6 +1,187 @@
 # Changelog
 
+## [Unreleased] - 2025-01-22
+
+### Added - OpenAI Realtime API Integration
+
+**Route:**
+- `/voice-realtime`: Protected route for LISA Career Advisor voice conversations
+- Full WebRTC-based voice interaction with OpenAI Realtime API
+
+**Components & UI:**
+- `components/realtime/Transcript.tsx`: Real-time conversation transcript with copy/download
+- `components/realtime/Events.tsx`: Debug event logs (client/server)
+- `components/realtime/BottomToolbar.tsx`: Connection controls, PTT, audio settings, codec selector
+- `components/realtime/GuardrailChip.tsx`: Content moderation status display
+
+**Context & State Management:**
+- `contexts/realtime/TranscriptContext.tsx`: Conversation state + Convex persistence
+- `contexts/realtime/EventContext.tsx`: Event logging for debugging
+
+**Hooks:**
+- `hooks/realtime/useRealtimeSession.ts`: WebRTC session management, OpenAI SDK integration
+- `hooks/realtime/useHandleSessionHistory.ts`: Process conversation events, update transcript
+- `hooks/realtime/useAudioDownload.ts`: Record and download conversation audio (WebM → WAV)
+
+**Agent Configuration:**
+- `lib/agentConfigs/lisaCareerAdvisor/`: LISA agent with structured career discovery framework
+  - `prompts.ts`: Discovery methodology (6 topics: Goals, Interests, Values, Hard Skills, Soft Skills, Work Style)
+  - `tools.ts`: `generateCareerRecommendations` tool (removed - conversations saved directly to Convex)
+  - `index.ts`: Agent definition (voice: "sage", tools: [])
+- `lib/agentConfigs/guardrails.ts`: Content moderation using OpenAI Responses API
+
+**Utilities:**
+- `lib/realtime/audioUtils.ts`: WAV encoding and WebM conversion
+- `lib/realtime/codecUtils.ts`: WebRTC codec preferences (Opus/PCMU/PCMA)
+
+**Types:**
+- `types/realtime.ts`: Complete type definitions for sessions, events, transcripts, guardrails
+
+**Convex Integration:**
+- `convex/realtimeConversations.ts`: Save/retrieve voice conversation transcripts
+- Schema: `realtimeConversations` table (userId, conversationId, agentName, fullTranscript, sessionDuration, messagesCount)
+- Conversations auto-saved on disconnect with formatted transcript string
+
+**API Routes:**
+- `app/api/realtime/session/route.ts`: Create OpenAI ephemeral session tokens
+- `app/api/realtime/responses/route.ts`: Proxy for OpenAI Responses API (guardrails)
+
+**Dependencies Added:**
+- `@openai/agents@^0.0.5`: OpenAI Agents SDK for Realtime API
+- `@radix-ui/react-icons@^1.3.2`: Icons for UI components
+- `react-markdown@^9.0.1`: Markdown rendering in transcript
+- `uuid@^11.0.5`: Unique conversation IDs
+- `@types/uuid@^10.0.0`: TypeScript types for UUID
+
+**Assets:**
+- `public/arrow.svg`: Send button icon
+- `public/openai-logomark.svg`: OpenAI branding
+
+**Features:**
+- Real-time bidirectional voice conversation with LISA Career Advisor
+- Push-to-talk mode toggle
+- Audio playback controls
+- Codec selection (Opus 48kHz, PCMU/PCMA 8kHz for phone quality testing)
+- Event log debugging panel
+- Audio recording with WAV export
+- Content moderation guardrails
+- Conversation persistence to Convex database
+- Clerk authentication required
+
+**Technical Details:**
+- WebRTC for low-latency voice streaming
+- OpenAI Realtime API (`gpt-4o-realtime-preview-2025-06-03`)
+- Client-side conversation tracking with server-side storage
+- Automatic session management and cleanup
+
+### Fixed - Authentication & Deployment
+
+**Auth Pattern Fix:**
+- Replaced non-existent `@convex-dev/auth` with Clerk authentication
+- Updated `convex/realtimeConversations.ts` to use `ctx.auth.getUserIdentity().subject`
+- Updated `convex/planningConversations.ts` to use `ctx.auth.getUserIdentity().subject`
+- Matches existing auth pattern used throughout codebase
+
+**Deployment Status:**
+- ✅ Dev server running successfully at http://localhost:3000
+- ✅ Convex functions deployed and ready
+- ✅ All table indexes created:
+  - `realtimeConversations.by_user`
+  - `realtimeConversations.by_user_created`
+  - `realtimeConversations.by_conversation_id`
+  - `planningConversations.by_user`
+  - `planningConversations.by_user_created`
+  - `planningConversations.by_conversation_id`
+- ✅ No build errors
+- ✅ All dependencies installed
+
+**Next Steps:**
+1. Add `OPENAI_API_KEY` to `.env.local`
+2. Navigate to `/voice-realtime`
+3. Test LISA voice conversation
+4. Verify conversation saves to Convex
+
+**Integration Summary:**
+- Total files created/modified: 35+
+- Commits: 4 (integration, completion, planning storage, auth fix)
+- Documentation: 3 files updated (CHANGELOG, frontend-architecture, openai-realtime-integration)
+- Status: ✅ Complete and ready for testing
+
+## [Unreleased] - 2025-01-22
+
+### Project Transition - PathFinder (Career OS)
+
+**Project Overview:**
+- Transitioned from bookmark management template to PathFinder (Career OS)
+- AI-powered career discovery platform with voice onboarding and multi-agent analysis
+- PRD.json added with complete product requirements
+
+**New Agents:**
+- `agent-error-fixer`: Systematically fixes code review issues from docs/errors/
+- `agent-status-reporter`: Analyzes project areas and reports status
+- `agent-shadcn`: shadcn/ui + Tailwind CSS implementation
+
+**Removed Agents:**
+- `agent-microlink`, `agent-openai`, `agent-unfurl` (old bookmark-related agents)
+
+**New Commands:**
+- `/execute-plan [plan.md]`: Execute implementation plans with todo tracking
+- `/identify-cause`: Deep root cause analysis before fixing issues
+- `/double-check`: Review generated work from multiple perspectives
+- `/update-docs`: Update docs/ using parallel agents
+- `/init [PRD.json]`: Initialize new project from PRD
+
+**Documentation:**
+- Added `/docs/reports` for status reports (Eleven Labs voice agent status)
+- Added `/docs/human-only-DONOTMODIFY` for human-only instructions
+- Updated CLAUDE.md with project overview, agents, commands, recent updates
+
+### Documentation Update - Comprehensive Analysis (2025-01-22)
+
+**Agent Analysis Completed:**
+- Components: 49 files (23 shadcn/ui, 13 features, 11 layout) - all working except 1 linting error
+- Routes: 6 pages - 4 working, 1 incomplete, 1 dev-only
+- Convex: 8 tables, 50+ functions - 1 incomplete RAG implementation
+- Config: Tailwind 4 CSS-first, Next.js 15 + React 19, TypeScript strict
+
+**Docs Updated:**
+- `component-patterns.md`: Added organization structure, icon libraries, status tracking, accessibility patterns
+- `frontend-architecture.md`: Route status table, auth patterns, known issues
+- `convex-patterns.md`: Current schema/functions, vector search patterns, race condition handling
+- `styling-guide.md`: Tailwind 4 config, "Warm Minimalism" design system, 23 shadcn/ui components
+- `api-routes-guide.md`: Documented no API routes (Convex-first backend)
+
+**Critical Issues:**
+- ⚠️ **Build Blocker**: `folder-tree.tsx:13` - Unused `FolderNode` interface prevents production builds
+- 🚧 **Incomplete Feature**: `chat.ts:140-146` - RAG bookmark search TODO not implemented
+- 🚧 **Missing UI**: `/bookmarks/page.tsx` - Only placeholders, needs bookmark list/cards
+- 🗑️ **Cleanup Needed**: `myFunctions.ts`, `numbers` table, `/tasks/data.json`
+- ⚠️ **Security**: `/font-test` dev page has no auth protection
+
+**Key Changes:**
+- Enhanced error analysis emphasizing root cause identification
+- CRITICAL error labeling for system design/database structure issues
+- Plan execution workflow with status tracking
+
 ## [Unreleased] - 2025-11-22
+
+### Fixed - Python Backend Dependencies
+
+**Requirements Update:**
+- `requirements.txt`: Updated elevenlabs from 1.14.1 (nonexistent) to 2.24.0 (latest)
+- Successfully installed all dependencies in venv
+
+### Added - Direct Voice Chat Implementation
+
+**New Files:**
+- `app/voice-demo-direct/page.tsx`: Direct voice demo route
+- `components/features/voice-chat-direct.tsx`: Direct voice chat component (188 lines)
+- `PROJECT_STATE.md`: Project state documentation
+- `nextSteps.md`: Next steps documentation (250 lines)
+
+**Updates:**
+- `python-backend/main.py`: +30 lines for enhanced voice functionality
+- `components/features/voice-chat.tsx`: Minor update
 
 ### Added - Python Backend Integration (Hybrid Architecture)
 
