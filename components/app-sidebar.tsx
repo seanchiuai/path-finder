@@ -6,6 +6,9 @@ import {
   IconInnerShadowTop,
   IconListDetails,
   IconSettings,
+  IconBookmark,
+  IconBulb,
+  IconRoute,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -24,9 +27,19 @@ import {
 const data = {
   navMain: [
     {
-      title: "Tasks",
-      url: "/tasks",
-      icon: IconListDetails,
+      title: "My Plan",
+      url: "/my-plan",
+      icon: IconRoute,
+    },
+    {
+      title: "Recommendations",
+      url: "/recommendations",
+      icon: IconBulb,
+    },
+    {
+      title: "Saved Careers",
+      url: "/saved-careers",
+      icon: IconBookmark,
     },
   ],
   navSecondary: [
@@ -53,9 +66,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/tasks">
+              <a href="/my-plan">
                 <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Sean&apos;s Claude Code Web Template</span>
+                <span className="text-base font-semibold">Career OS</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

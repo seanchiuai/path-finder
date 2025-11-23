@@ -23,7 +23,7 @@ export function SemanticSearch({ projectId, limit = 10 }: SemanticSearchProps) {
   const generateEmbedding = useAction(api.embeddings.generateEmbedding);
   const searchResults = useQuery(
     embedding
-      ? api.search.searchBookmarks
+      ? api.search.searchSavedCareers
       : "skip",
     embedding
       ? {
@@ -66,7 +66,7 @@ export function SemanticSearch({ projectId, limit = 10 }: SemanticSearchProps) {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search bookmarks semantically..."
+            placeholder="Search saved careers semantically..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-9"
@@ -101,27 +101,20 @@ export function SemanticSearch({ projectId, limit = 10 }: SemanticSearchProps) {
             </div>
           ) : (
             <div className="grid gap-4">
-              {searchResults.map((bookmark) => (
-                <Card key={bookmark._id} className="hover:bg-accent/50 transition-colors">
+              {searchResults.map((savedCareer) => (
+                <Card key={savedCareer._id} className="hover:bg-accent/50 transition-colors">
                   <CardHeader>
                     <CardTitle className="text-lg">
-                      <a
-                        href={bookmark.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:underline"
-                      >
-                        {bookmark.title}
-                      </a>
+                      {savedCareer.careerName}
                     </CardTitle>
-                    <CardDescription className="text-xs font-mono truncate">
-                      {bookmark.url}
+                    <CardDescription className="text-sm">
+                      {savedCareer.industry} • {savedCareer.matchScore}% match
                     </CardDescription>
                   </CardHeader>
-                  {bookmark.description && (
+                  {savedCareer.matchExplanation && (
                     <CardContent>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {bookmark.description}
+                      <p className="text-sm text-muted-foreground line-clamp-3">
+                        {savedCareer.matchExplanation}
                       </p>
                     </CardContent>
                   )}

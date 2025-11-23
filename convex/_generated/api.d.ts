@@ -8,18 +8,23 @@
  * @module
  */
 
-import type * as bookmarks from "../bookmarks.js";
+import type * as actionPlans from "../actionPlans.js";
+import type * as agentRuns from "../agentRuns.js";
+import type * as careerFolders from "../careerFolders.js";
+import type * as careerProfiles from "../careerProfiles.js";
+import type * as careerProjects from "../careerProjects.js";
+import type * as careerRecommendations from "../careerRecommendations.js";
 import type * as chat from "../chat.js";
 import type * as chatMessages from "../chatMessages.js";
 import type * as embeddings from "../embeddings.js";
-import type * as folders from "../folders.js";
 import type * as init from "../init.js";
 import type * as memory from "../memory.js";
-import type * as myFunctions from "../myFunctions.js";
-import type * as projects from "../projects.js";
+import type * as resources from "../resources.js";
+import type * as salaryDataPoints from "../salaryDataPoints.js";
+import type * as savedCareers from "../savedCareers.js";
 import type * as search from "../search.js";
 import type * as spoonos from "../spoonos.js";
-import type * as todos from "../todos.js";
+import type * as userProfiles from "../userProfiles.js";
 import type * as voice from "../voice.js";
 
 import type {
@@ -29,18 +34,23 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  bookmarks: typeof bookmarks;
+  actionPlans: typeof actionPlans;
+  agentRuns: typeof agentRuns;
+  careerFolders: typeof careerFolders;
+  careerProfiles: typeof careerProfiles;
+  careerProjects: typeof careerProjects;
+  careerRecommendations: typeof careerRecommendations;
   chat: typeof chat;
   chatMessages: typeof chatMessages;
   embeddings: typeof embeddings;
-  folders: typeof folders;
   init: typeof init;
   memory: typeof memory;
-  myFunctions: typeof myFunctions;
-  projects: typeof projects;
+  resources: typeof resources;
+  salaryDataPoints: typeof salaryDataPoints;
+  savedCareers: typeof savedCareers;
   search: typeof search;
   spoonos: typeof spoonos;
-  todos: typeof todos;
+  userProfiles: typeof userProfiles;
   voice: typeof voice;
 }>;
 

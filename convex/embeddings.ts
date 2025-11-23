@@ -144,23 +144,24 @@ async function retryWithBackoff<T>(
 /**
  * Generate embedding and update bookmark
  */
-export const generateBookmarkEmbedding = action({
+export const generateSavedCareerEmbedding = action({
   args: {
-    bookmarkId: v.id("bookmarks"),
+    savedCareerId: v.id("savedCareers"),
   },
-  handler: async (ctx, { bookmarkId }): Promise<void> => {
-    // Get bookmark
-    const bookmark = await ctx.runQuery(api.bookmarks.getBookmark, {
-      bookmarkId,
+  handler: async (ctx, { savedCareerId }): Promise<void> => {
+    // Get saved career
+    const savedCareer = await ctx.runQuery(api.savedCareers.getSavedCareer, {
+      savedCareerId,
     });
 
-    if (!bookmark) throw new Error("Bookmark not found");
+    if (!savedCareer) throw new Error("Saved career not found");
 
     // Create text to embed
     const textToEmbed = [
-      bookmark.title,
-      bookmark.description || "",
-      bookmark.url,
+      savedCareer.careerName,
+      savedCareer.industry,
+      `Match Score: ${savedCareer.matchScore}`,
+      savedCareer.matchExplanation,
     ]
       .filter(Boolean)
       .join("\n");
@@ -170,32 +171,32 @@ export const generateBookmarkEmbedding = action({
       ctx.runAction(api.embeddings.generateEmbedding, { text: textToEmbed })
     );
 
-    // Update bookmark with embedding
-    await ctx.runMutation(api.bookmarks.updateBookmarkEmbedding, {
-      bookmarkId,
+    // Update saved career with embedding
+    await ctx.runMutation(api.savedCareers.updateSavedCareerEmbedding, {
+      savedCareerId,
       embedding,
     });
   },
 });
 
 /**
- * Batch generate embeddings for bookmarks without embeddings
- * Processes bookmarks in concurrent batches with rate limiting
+ * Batch generate embeddings for saved careers without embeddings
+ * Processes saved careers in concurrent batches with rate limiting
  */
-export const batchGenerateEmbeddings = action({
+export const batchGenerateSavedCareerEmbeddings = action({
   args: {
     userId: v.string(),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { userId, limit = 100 }): Promise<{ success: number; failed: string[] }> => {
-    // Get all bookmarks without embeddings
-    const allBookmarks = await ctx.runQuery(
-      api.bookmarks.listBookmarksWithoutEmbeddings,
+    // Get all saved careers without embeddings
+    const allSavedCareers = await ctx.runQuery(
+      api.savedCareers.listSavedCareersWithoutEmbeddings,
       { userId }
     );
 
-    // Limit number of bookmarks to process
-    const bookmarks = allBookmarks.slice(0, limit);
+    // Limit number of saved careers to process
+    const savedCareers = allSavedCareers.slice(0, limit);
 
     let successCount = 0;
     const failedIds: string[] = [];
@@ -204,31 +205,31 @@ export const batchGenerateEmbeddings = action({
     const BATCH_SIZE = 3;
     const BATCH_DELAY = 1000; // 1s delay between batches
 
-    for (let i = 0; i < bookmarks.length; i += BATCH_SIZE) {
-      const batch = bookmarks.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < savedCareers.length; i += BATCH_SIZE) {
+      const batch = savedCareers.slice(i, i + BATCH_SIZE);
 
       // Process batch concurrently
       const results = await Promise.allSettled(
-        batch.map((bookmark) =>
-          ctx.runAction(api.embeddings.generateBookmarkEmbedding, {
-            bookmarkId: bookmark._id,
+        batch.map((savedCareer) =>
+          ctx.runAction(api.embeddings.generateSavedCareerEmbedding, {
+            savedCareerId: savedCareer._id,
           })
         )
       );
 
       // Track success/failure
       results.forEach((result, index) => {
-        const bookmarkId = batch[index]._id;
+        const savedCareerId = batch[index]._id;
         if (result.status === "fulfilled") {
           successCount++;
         } else {
-          failedIds.push(bookmarkId);
-          console.error(`Failed to generate embedding for ${bookmarkId}:`, result.reason);
+          failedIds.push(savedCareerId);
+          console.error(`Failed to generate embedding for ${savedCareerId}:`, result.reason);
         }
       });
 
       // Add delay between batches (except after last batch)
-      if (i + BATCH_SIZE < bookmarks.length) {
+      if (i + BATCH_SIZE < savedCareers.length) {
         await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY));
       }
     }

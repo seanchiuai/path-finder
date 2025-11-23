@@ -45,3 +45,6 @@ package-lock.json
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+/python_backend/.env
+/python_backend/.venv

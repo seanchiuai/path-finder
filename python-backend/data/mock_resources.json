@@ -1,0 +1,228 @@
+{
+  "careers": {
+    "Software Engineer": {
+      "resources": [
+        {
+          "type": "simulator",
+          "title": "Code Review Simulator",
+          "description": "Practice conducting code reviews and providing constructive feedback",
+          "content": "Interactive simulation where you review code snippets and provide feedback to team members. Learn to identify bugs, suggest improvements, and communicate effectively."
+        },
+        {
+          "type": "local_expert",
+          "title": "Senior Software Engineer Meetup",
+          "description": "Connect with experienced engineers in your area",
+          "content": "Monthly meetup for software engineers to share experiences and network",
+          "metadata": {
+            "name": "Tech Engineers Meetup",
+            "location": "Downtown Tech Hub",
+            "contact": "meetup@techhub.com",
+            "availability": "First Thursday of each month",
+            "intro": "Join our community of 500+ software engineers"
+          }
+        },
+        {
+          "type": "online_expert",
+          "title": "System Design Mentorship",
+          "description": "1-on-1 mentorship for system design interviews",
+          "content": "Personalized coaching for system design interviews with FAANG engineers",
+          "metadata": {
+            "name": "Tech Interview Pro",
+            "location": "Remote",
+            "contact": "mentorship@techinterviewpro.com",
+            "availability": "Flexible scheduling",
+            "intro": "Learn from engineers at Google, Amazon, and Microsoft"
+          }
+        },
+        {
+          "type": "article",
+          "title": "Clean Code Principles",
+          "description": "Essential principles for writing maintainable code",
+          "content": "Learn the SOLID principles, DRY, KISS, and other fundamental concepts that separate good code from great code.",
+          "externalLink": "https://example.com/clean-code-principles"
+        },
+        {
+          "type": "video",
+          "title": "Data Structures and Algorithms Masterclass",
+          "description": "Comprehensive video course on essential algorithms",
+          "content": "40+ hours of video content covering arrays, linked lists, trees, graphs, and dynamic programming",
+          "externalLink": "https://youtube.com/watch?v=example-algorithms"
+        },
+        {
+          "type": "try_on_own",
+          "title": "Build a Todo App",
+          "description": "Create a full-stack todo application",
+          "content": "Build a complete todo application with React frontend and Node.js backend. Include user authentication, database integration, and deployment."
+        }
+      ]
+    },
+    "Product Manager": {
+      "resources": [
+        {
+          "type": "simulator",
+          "title": "Product Strategy Simulator",
+          "description": "Practice making product decisions under pressure",
+          "content": "Simulate real-world product scenarios where you must make strategic decisions about feature prioritization, resource allocation, and market positioning."
+        },
+        {
+          "type": "local_expert",
+          "title": "Product Management Workshop",
+          "description": "Hands-on workshop with experienced PMs",
+          "content": "Interactive workshop covering product lifecycle, user research, and stakeholder management",
+          "metadata": {
+            "name": "Product School",
+            "location": "Business District",
+            "contact": "workshops@productschool.com",
+            "availability": "Weekend intensive sessions",
+            "intro": "Learn from PMs at top tech companies"
+          }
+        },
+        {
+          "type": "online_expert",
+          "title": "PM Career Coaching",
+          "description": "Personalized career guidance for aspiring PMs",
+          "content": "One-on-one coaching sessions to help you transition into product management",
+          "metadata": {
+            "name": "PM Career Coach",
+            "location": "Remote",
+            "contact": "coach@pmcareers.com",
+            "availability": "Evenings and weekends",
+            "intro": "Former Google PM helping others break into product"
+          }
+        },
+        {
+          "type": "article",
+          "title": "The Lean Product Playbook",
+          "description": "Essential guide to lean product development",
+          "content": "Comprehensive guide to applying lean startup principles to product development, from ideation to launch.",
+          "externalLink": "https://example.com/lean-product-playbook"
+        },
+        {
+          "type": "blog",
+          "title": "Product Management Best Practices",
+          "description": "Industry insights from top PMs",
+          "content": "Collection of blog posts from product leaders at companies like Google, Amazon, and Facebook sharing their experiences and best practices.",
+          "externalLink": "https://blog.example.com/pm-best-practices"
+        },
+        {
+          "type": "try_on_own",
+          "title": "Design a Product Roadmap",
+          "description": "Create a strategic product roadmap",
+          "content": "Design a 12-month product roadmap for a fictional mobile app. Include user research, competitive analysis, feature prioritization, and success metrics."
+        }
+      ]
+    },
+    "Data Scientist": {
+      "resources": [
+        {
+          "type": "simulator",
+          "title": "Data Analysis Simulator",
+          "description": "Practice analyzing real datasets",
+          "content": "Work with real-world datasets to perform exploratory data analysis, build predictive models, and create data visualizations."
+        },
+        {
+          "type": "local_expert",
+          "title": "Data Science Meetup",
+          "description": "Connect with data scientists in your area",
+          "content": "Monthly meetup featuring talks on machine learning, statistical analysis, and data visualization",
+          "metadata": {
+            "name": "Data Science Community",
+            "location": "University Campus",
+            "contact": "meetup@datascience.org",
+            "availability": "Third Wednesday monthly",
+            "intro": "Community of 300+ data professionals"
+          }
+        },
+        {
+          "type": "online_expert",
+          "title": "Machine Learning Mentorship",
+          "description": "Learn ML from industry practitioners",
+          "content": "Personalized mentorship program covering machine learning algorithms, model evaluation, and deployment",
+          "metadata": {
+            "name": "ML Mentors",
+            "location": "Remote",
+            "contact": "mentors@mlmentors.com",
+            "availability": "Flexible scheduling",
+            "intro": "PhD-level mentors from top tech companies"
+          }
+        },
+        {
+          "type": "article",
+          "title": "Introduction to Machine Learning",
+          "description": "Comprehensive guide to ML fundamentals",
+          "content": "Learn the basics of machine learning including supervised learning, unsupervised learning, and neural networks.",
+          "externalLink": "https://example.com/intro-to-ml"
+        },
+        {
+          "type": "video",
+          "title": "Python for Data Science",
+          "description": "Complete Python tutorial for data analysis",
+          "content": "Learn Python programming with focus on data science libraries like pandas, numpy, and scikit-learn",
+          "externalLink": "https://youtube.com/watch?v=python-datascience"
+        },
+        {
+          "type": "try_on_own",
+          "title": "Predict House Prices",
+          "description": "Build a predictive model for real estate",
+          "content": "Use the Boston housing dataset to build a machine learning model that predicts house prices based on various features like location, size, and amenities."
+        }
+      ]
+    },
+    "UX Designer": {
+      "resources": [
+        {
+          "type": "simulator",
+          "title": "User Testing Simulator",
+          "description": "Practice conducting user research sessions",
+          "content": "Simulate user testing sessions where you observe users interacting with prototypes and gather feedback to improve designs."
+        },
+        {
+          "type": "local_expert",
+          "title": "UX Design Workshop",
+          "description": "Hands-on design thinking workshop",
+          "content": "Interactive workshop covering user research, prototyping, and usability testing",
+          "metadata": {
+            "name": "Design Thinking Lab",
+            "location": "Design Studio",
+            "contact": "workshops@designlab.com",
+            "availability": "Weekend sessions",
+            "intro": "Learn from designers at top agencies"
+          }
+        },
+        {
+          "type": "online_expert",
+          "title": "Portfolio Review Service",
+          "description": "Get feedback on your design portfolio",
+          "content": "Professional review of your UX portfolio with actionable feedback for improvement",
+          "metadata": {
+            "name": "Portfolio Mentors",
+            "location": "Remote",
+            "contact": "review@portfoliomentors.com",
+            "availability": "Book online",
+            "intro": "Senior UX designers providing portfolio feedback"
+          }
+        },
+        {
+          "type": "article",
+          "title": "Design Thinking Process",
+          "description": "Complete guide to design thinking methodology",
+          "content": "Learn the five stages of design thinking: empathize, define, ideate, prototype, and test. Includes practical examples and case studies.",
+          "externalLink": "https://example.com/design-thinking-process"
+        },
+        {
+          "type": "blog",
+          "title": "UX Design Trends 2024",
+          "description": "Latest trends in user experience design",
+          "content": "Explore current UX design trends including voice interfaces, AR/VR experiences, and accessibility-first design.",
+          "externalLink": "https://blog.example.com/ux-trends-2024"
+        },
+        {
+          "type": "try_on_own",
+          "title": "Redesign a Mobile App",
+          "description": "Improve the user experience of an existing app",
+          "content": "Choose a popular mobile app and redesign one key feature to improve usability. Create wireframes, prototypes, and conduct user testing."
+        }
+      ]
+    }
+  }
+}
