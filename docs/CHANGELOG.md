@@ -1,5 +1,13 @@
 # Changelog
 
+## [Schema Validation Fix] - 2025-11-23
+
+### Fixed - Career Recommendations Validation Error
+**careerRecommendations.ts:49-59**: Updated schema validator to accept all fields returned by SpoonOS AI:
+- Added: `careerId`, `summary`, `medianSalary`, `growthOutlook`, `estimatedTime`
+- Fixed ArgumentValidationError: "Object contains extra field careerId"
+- Schema now matches full AI output structure
+
 ## [E2E Testing Ready] - 2025-11-23
 
 ### Fixed - TypeScript Errors in Convex Functions
