@@ -1,5 +1,18 @@
 # Changelog
 
+## [Default Project Auto-Init Fix] - 2025-11-23
+
+### Fixed - "Default project not found" Error
+**Issue:** Error when clicking "Generate Action Plans" because defaultProject was null.
+
+**Changes:**
+- Added auto-initialization using initializeUserDefaults mutation (app/recommendations/page.tsx:57,351-375)
+- Creates "Main" project with isDefault=true when missing
+- Button shows "Initializing..." during setup
+- Changed error throw → friendly toast message
+
+**Flow:** Page load → Checks defaultProject → If null → Auto-creates "Main" project → User can generate plans.
+
 ## [Saved Careers Display Fix] - 2025-11-23
 
 ### Fixed - Saved Careers Page Shows Selected Careers
