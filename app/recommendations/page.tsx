@@ -2,34 +2,45 @@
 
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { Id } from "@/convex/_generated/dataModel"
 import { useUser } from "@clerk/nextjs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { IconBulb, IconArrowLeft } from "@tabler/icons-react"
-import { useRouter } from "next/navigation"
+import { IconBulb, IconArrowLeft, IconAlertCircle } from "@tabler/icons-react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import AnalysisLoading from "@/components/features/analysis-loading"
+import { careerAPI } from "@/src/lib/api"
 
 export default function RecommendationsPage() {
   const { user } = useUser()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const userProfile = useQuery(api.userProfiles.getUserProfile)
   const recommendations = useQuery(api.careerRecommendations.getCareerRecommendations)
-  
+
+  // Analyzing state
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisError, setAnalysisError] = useState<string | null>(null)
+
   // Get default project and folder for saving careers
   const defaultProject = useQuery(
     user ? api.careerProjects.getDefaultProject : "skip"
   )
-  
+
   const defaultFolder = useQuery(
     defaultProject ? api.careerFolders.getDefaultFolder : "skip",
     defaultProject ? { projectId: defaultProject._id } : "skip"
   )
-  
+
   // Mutations
   const selectRecommendation = useMutation(api.careerRecommendations.selectRecommendation)
   const createSavedCareer = useMutation(api.savedCareers.createSavedCareer)
+  const getOrCreateCareerProfile = useMutation(api.careerProfiles.getOrCreateCareerProfile)
+  const updateCareerProfile = useMutation(api.careerProfiles.updateCareerProfile)
+  const createCareerRecommendations = useMutation(api.careerRecommendations.createCareerRecommendations)
   const [selectingCareer, setSelectingCareer] = useState<string | null>(null)
 
   // Handlers
@@ -80,6 +91,101 @@ export default function RecommendationsPage() {
       console.error("Failed to save career:", error)
       toast.error("Failed to save career")
     }
+  }
+
+  const runAnalysis = async () => {
+    if (!user) {
+      toast.error("Please sign in to analyze your profile")
+      router.push("/sign-in")
+      return
+    }
+
+    setIsAnalyzing(true)
+    setAnalysisError(null)
+
+    try {
+      // Get transcript from sessionStorage
+      const transcript = sessionStorage.getItem("voiceOnboardingTranscript")
+      if (!transcript) {
+        throw new Error("No transcript found. Please complete the voice session first.")
+      }
+
+      // Call Python backend for analysis
+      const result = await careerAPI.onboardingStart(transcript)
+
+      if (!result.success) {
+        throw new Error("Analysis failed")
+      }
+
+      // Save to Convex
+      await getOrCreateCareerProfile({ userId: user.id })
+      await updateCareerProfile({
+        rawOnboardingTranscript: transcript,
+        aiAnalysisResults: undefined,
+      })
+
+      // Normalize and save recommendations
+      const normalized = (result.recommendedRoles || []).map((r: any) => ({
+        industry: r.industry || "Technology",
+        role: r.career || r.role,
+        matchScore: Math.round((r.match_score ?? r.matchScore ?? 0) * 100),
+        matchExplanation: r.reasoning || r.matchExplanation || "",
+      }))
+
+      await createCareerRecommendations({
+        agentRunId: result.orchestratorSessionId || "session",
+        recommendations: normalized,
+      })
+
+      // Clear transcript from sessionStorage
+      sessionStorage.removeItem("voiceOnboardingTranscript")
+
+      // Remove analyzing query param and show results
+      router.replace("/recommendations")
+      toast.success("Analysis complete! Here are your career recommendations.")
+    } catch (error) {
+      console.error("Analysis failed:", error)
+      setAnalysisError(error instanceof Error ? error.message : "Failed to analyze your profile")
+      toast.error("Analysis failed. Please try again.")
+    } finally {
+      setIsAnalyzing(false)
+    }
+  }
+
+  // Check for analyzing query param on mount
+  useEffect(() => {
+    const analyzing = searchParams?.get("analyzing")
+    if (analyzing === "true" && !isAnalyzing && !analysisError) {
+      runAnalysis()
+    }
+  }, [searchParams])
+
+  // Show analysis loading state
+  if (isAnalyzing) {
+    return <AnalysisLoading onComplete={() => setIsAnalyzing(false)} />
+  }
+
+  // Show analysis error with retry option
+  if (analysisError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <IconAlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <CardTitle>Analysis Failed</CardTitle>
+            <CardDescription>{analysisError}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            <Button onClick={runAnalysis} disabled={isAnalyzing}>
+              Retry Analysis
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/dashboard")}>
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   if (!user) {
